@@ -1,3 +1,5 @@
+#include <string>
+
 namespace cstd {
   #include <sys/socket.h>
   #include <netinet/in.h>
@@ -5,8 +7,6 @@ namespace cstd {
   #include <fcntl.h>
   #include <arpa/inet.h>
 }
-
-#include <string>
 
 class Socket {
   typedef cstd::sockaddr_in Address;
