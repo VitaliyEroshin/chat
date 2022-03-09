@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <utility>
 
 namespace cstd {
   #include <sys/socket.h>
@@ -10,6 +11,7 @@ namespace cstd {
 }
 
 class Socket {
+public:
   typedef cstd::sockaddr_in Address;
 
   const int domain = AF_INET;
@@ -17,18 +19,21 @@ class Socket {
   int descriptor;
   Address address;
 
-  
   Socket(int port);
-  ~Socket();
+  Socket() = default;
+  ~Socket() = default;
 
-  void bind();
-  void setSocketOption(int option, int value);
-  void listen(int backlog);
+  int bind();
+  int setSocketOption(int option, int value);
+  int listen(int backlog);
   void setAddress(int port);
   Socket accept();
-
   std::string getIpAddress();
+  void send(std::string message);
+  void send(char* buffer);
+  void getPeerName();
+  int getPort();
 
 private:
-  Socket();
+  std::pair<cstd::sockaddr*, cstd::socklen_t*> getAddress();
 };

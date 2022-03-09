@@ -11,32 +11,48 @@ Socket::Socket(int port) {
   setAddress(port);
 }
 
-Socket::~Socket() {
-  cstd::close(descriptor);
+int Socket::bind() {
+  return cstd::bind(descriptor, (struct cstd::sockaddr *)&address, sizeof(address));
 }
 
-void Socket::bind() {
-  cstd::bind(descriptor, (struct cstd::sockaddr *)&address, sizeof(address));
+int Socket::setSocketOption(int option, int value) {
+  return cstd::setsockopt(descriptor, SOL_SOCKET, option, (char *)&value, sizeof(value));
 }
 
-void Socket::setSocketOption(int option, int value) {
-  cstd::setsockopt(descriptor, SOL_SOCKET, option, (char *)&value, sizeof(value));
-}
-
-void Socket::listen(int backlog) {
-  cstd::listen(descriptor, backlog);
+int Socket::listen(int backlog) {
+  return cstd::listen(descriptor, backlog);
 }
 
 Socket Socket::accept() {
   Socket peer;
 
-  cstd::sockaddr* peerAddress = reinterpret_cast<cstd::sockaddr*>(&peer.address);
-  size_t addressLength = sizeof(peer.address);
-  cstd::socklen_t* peerAddressLength = reinterpret_cast<cstd::socklen_t*>(&addressLength);
-
-  peer.descriptor = cstd::accept(descriptor, peerAddress, peerAddressLength);
+  auto peerAddress = peer.getAddress();
+  peer.descriptor = cstd::accept(descriptor, peerAddress.first, peerAddress.second);
+  return peer;
 }
 
 std::string Socket::getIpAddress() {
   return std::string(cstd::inet_ntoa(address.sin_addr));
+}
+
+std::pair<cstd::sockaddr*, cstd::socklen_t*> Socket::getAddress() {
+  static cstd::socklen_t addressLength = sizeof(address);
+  return {reinterpret_cast<cstd::sockaddr*>(&address), &addressLength};
+}
+
+void Socket::send(std::string message) {
+  cstd::send(descriptor, message.c_str(), message.length(), 0);
+}
+
+void Socket::send(char* buffer) {
+  cstd::send(descriptor, buffer, sizeof(buffer), 0);
+}
+
+void Socket::getPeerName() {
+  auto peerAddress = getAddress();
+  cstd::getpeername(descriptor, peerAddress.first, peerAddress.second);
+}
+
+int Socket::getPort() {
+  return address.sin_port;
 }
