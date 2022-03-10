@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <utility>
+#include <iostream>
 
 namespace cstd {
   #include <sys/socket.h>
@@ -21,7 +22,7 @@ public:
 
   Socket(int port);
   Socket() = default;
-  ~Socket() = default;
+  ~Socket();
 
   int bind();
   int setSocketOption(int option, int value);
@@ -31,6 +32,7 @@ public:
   std::string getIpAddress();
   void send(std::string message);
   void send(char* buffer);
+  void send(char* buffer, size_t length);
   void getPeerName();
   int getPort();
 

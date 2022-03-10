@@ -11,6 +11,10 @@ Socket::Socket(int port) {
   setAddress(port);
 }
 
+Socket::~Socket() {
+  cstd::close(descriptor);
+}
+
 int Socket::bind() {
   return cstd::bind(descriptor, (struct cstd::sockaddr *)&address, sizeof(address));
 }
@@ -46,6 +50,10 @@ void Socket::send(std::string message) {
 
 void Socket::send(char* buffer) {
   cstd::send(descriptor, buffer, sizeof(buffer), 0);
+}
+
+void Socket::send(char* buffer, size_t length) {
+  cstd::send(descriptor, buffer, length, 0);
 }
 
 void Socket::getPeerName() {
