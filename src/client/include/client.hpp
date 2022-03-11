@@ -25,6 +25,4 @@ public:
   Client();
   
   int connect();
-  void readUserInput(std::atomic<bool>& run);
-  void readServer(std::atomic<bool>& run);
 };

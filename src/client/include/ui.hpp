@@ -46,8 +46,11 @@ public:
   void initWindow();
   void printLine(std::string s);
   void print(std::string s);
+  void hideBuffer();
+  void showBuffer();
   
   std::deque<size_t> lineLength;
+  std::string inputInvite;
 
   std::string input(std::string invite, bool saveInvite = false);
 };

@@ -1,6 +1,8 @@
 #include "ui.hpp"
 
 std::string UserInterface::input(std::string invite, bool saveInvite) {
+  inputInvite = invite;
+  lineLength.push_front(invite.length());
   std::cout << invite;
   char input;
 
@@ -134,4 +136,12 @@ void UserInterface::print(std::string s) {
 
 void UserInterface::printLine(std::string s) {
   std::cout << s << "\n\r";
+}
+
+void UserInterface::hideBuffer() {
+  
+}
+
+void UserInterface::showBuffer() {
+  
 }
