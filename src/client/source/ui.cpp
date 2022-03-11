@@ -77,6 +77,8 @@ void UserInterface::clearPreviousLine() {
 void UserInterface::updateWindowSize() {
   struct winsize size;
   ioctl(STDOUT_FILENO, TIOCGWINSZ, &size);
+  windowHeight = size.ws_row;
+  windowWidth = size.ws_col;
 }
 
 void UserInterface::updateTail() {
@@ -113,4 +115,23 @@ void UserInterface::InputBuffer::moveLeftAll() {
   while (!right.empty()) {
     moveLeft();
   }
+}
+
+void UserInterface::initWindow() {
+  updateWindowSize();
+  for (int i = 0; i < windowHeight; ++i) {
+    printLine("");
+  }
+  std::flush(std::cout);
+  for (int i = 0; i < windowHeight; ++i) {
+    coursor.moveUp();
+  }
+}
+
+void UserInterface::print(std::string s) {
+  std::cout << s;
+}
+
+void UserInterface::printLine(std::string s) {
+  std::cout << s << "\n\r";
 }

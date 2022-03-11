@@ -1,3 +1,4 @@
+#pragma once
 #include <iostream>
 #include <string>
 #include <deque>
@@ -42,7 +43,11 @@ public:
   void updateTail();
   void moveTailLeft(size_t n);
 
-  std::deque<size_t> lineLength;
+  void initWindow();
+  void printLine(std::string s);
+  void print(std::string s);
   
+  std::deque<size_t> lineLength;
+
   std::string input(std::string invite, bool saveInvite = false);
 };
