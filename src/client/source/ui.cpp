@@ -2,60 +2,115 @@
 
 std::string UserInterface::input(std::string invite, bool saveInvite) {
   std::cout << invite;
-  char inputChar;
-  while (inputChar != 13) {
-    inputChar = getchar();
+  char input;
 
-    if (inputChar == 127) { 
-      // Backspace
+  while (!keyboard.isEnter(input)) {
+    input = getchar();
+
+    if (keyboard.isBackspace(input)) { 
       printBackspace();
+      moveTailLeft(1);
       continue;
-    } else if (inputChar == 27) {
+    }
+
+    if (keyboard.isArrow(input)) {
       getchar();
       switch(getchar()) {
-        case 'A':
-          // code for arrow up
-          break;
-        case 'B':
-          // code for arrow down
-          break;
         case 67:
-          std::cout << char(27) << char(91) << char(67);
-          break;
+          if (buffer.right.empty())
+            continue;
+
+          buffer.moveLeft();
+          coursor.moveRight();
+          continue;
+          
         case 68:
-          std::cout << char(27) << char(91) << char(68);
-          break;
+          if (buffer.left.empty())
+            continue;
+          
+          buffer.moveRight();
+          coursor.moveLeft();
+          continue;
       }
     }
-
-    if (inputChar != 13 && !std::isalpha(inputChar) && !std::iswalpha(inputChar) && !std::isdigit(inputChar)) {
-      continue;
-    }
-    std::cout << inputChar;
-    inputBuffer.push_back(inputChar);
+    
+    std::cout << input;
+    
+    buffer.left.push_back(input);
+    updateTail();
   }
-  inputBuffer.pop_back();
-  
-  std::string value = (saveInvite ? invite : "") + inputBuffer;
-  clearPreviousLine(inputBuffer.length() + invite.length());
-  inputBuffer = "";
+
+  buffer.left.pop_back();
+  buffer.moveLeftAll();
+
+  std::string value = (saveInvite ? invite : "") + buffer.left;
+
+  lineLength.push_front(buffer.left.length() + invite.length());
+
+  if (lineLength.size() >= 64) {
+    lineLength.pop_back();
+  }
+
+  std::cout << "\n\r";
+  std::flush(std::cout);
+  buffer.left = "";
   return value;
 }
 
 void UserInterface::printBackspace() {
-  if (!inputBuffer.empty()) {
-    inputBuffer.pop_back();
-    std::cout << "\b \b";
-    std::flush(std::cout);
-  }
+  if (buffer.left.empty())
+    return;
+
+  buffer.left.pop_back();
+  std::cout << "\b \b";
+  std::flush(std::cout);
 }
 
-void UserInterface::clearPreviousLine(size_t lineLength) {
-  std::cout << "\r" << std::string(lineLength, ' ') << "\r";
+void UserInterface::clearPreviousLine() {
+  size_t len = lineLength.front();
+  coursor.moveUp();
+  std::cout << "\r" << std::string(len, ' ') << "\r";
   std::flush(std::cout);
+  lineLength.pop_front();
 }
 
 void UserInterface::updateWindowSize() {
   struct winsize size;
   ioctl(STDOUT_FILENO, TIOCGWINSZ, &size);
+}
+
+void UserInterface::updateTail() {
+  for (auto &x : buffer.right) {
+    std::cout << x;
+  }
+
+  for (auto &x : buffer.right) {
+    coursor.moveLeft();
+  }
+}
+
+void UserInterface::moveTailLeft(size_t n) {
+  for (auto &x : buffer.right) {
+    std::cout << x;
+  }
+  std::cout << std::string(n, ' ');
+  for (int i = 0; i < n + buffer.right.size(); ++i) {
+    coursor.moveLeft();
+  }
+}
+
+void UserInterface::InputBuffer::moveLeft() {
+  left.push_back(right.front());
+  right.pop_back();
+}
+
+void UserInterface::InputBuffer::moveRight() {
+  right.push_front(left.back());
+  left.pop_back();
+}
+
+void UserInterface::InputBuffer::moveLeftAll() {
+  while (!right.empty()) {
+    moveLeft();
+  }
 }
