@@ -71,8 +71,8 @@ int session() {
 }
 
 int main() {
-  system("stty raw");
+  system("stty raw -echo");
   session();
-  
-  system("stty cooked");
+
+  system("stty cooked echo");
 }

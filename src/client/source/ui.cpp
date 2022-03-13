@@ -105,7 +105,7 @@ void UserInterface::moveTailLeft(size_t n) {
 
 void UserInterface::InputBuffer::moveLeft() {
   left.push_back(right.front());
-  right.pop_back();
+  right.pop_front();
 }
 
 void UserInterface::InputBuffer::moveRight() {
