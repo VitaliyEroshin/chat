@@ -1,3 +1,5 @@
 ./clear.sh
-cmake -B build
-cmake --build build
+mkdir build
+cd build
+cmake ..
+make

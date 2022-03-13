@@ -7,7 +7,7 @@ void Socket::setAddress(int port) {
 }
 
 Socket::Socket(int port) {
-  descriptor = cstd::socket(domain, cstd::SOCK_STREAM, 0);
+  descriptor = cstd::socket(domain, SOCK_STREAM, 0);
   setAddress(port);
 }
 

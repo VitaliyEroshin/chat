@@ -17,6 +17,10 @@ namespace cstd {
   #define htons cstd::htons
 #endif
 
+#ifdef __APPLE__
+  #define select cstd::select
+#endif
+
 #undef SOCK_STREAM
 const int SOCK_STREAM = 1;
 
