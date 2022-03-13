@@ -7,7 +7,8 @@ void readUserInput(std::atomic<bool>& run) {
   while (run.load()) {
     std::string command = client.ui.input("> ");
     client.ui.clearPreviousLine();
-    std::cout << command << "\n\r";
+    
+    client.ui.printLine(command);
     if (command == "/quit") {
       run.store(false);
       client.socket.~Socket();
@@ -32,7 +33,11 @@ void readServer(std::atomic<bool>& run) {
       message.push_back(buffer[i]);
     }
     
-    std::cout << "\r" << message << "(" << readBytes << " bytes)";
+    
+    std::cout << "\r";
+    std::cout << std::string(3 + client.ui.buffer.left.size() + client.ui.buffer.right.size(), ' ');
+    std::cout << "\r";
+    std::cout << message << "(" << readBytes << " bytes)";
     std::flush(std::cout);
     std::cout << "\n\r" << client.ui.inputInvite;
     std::cout << client.ui.buffer.left;

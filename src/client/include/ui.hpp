@@ -42,7 +42,6 @@ public:
   void printBackspace();
   void updateTail();
   void moveTailLeft(size_t n);
-
   void initWindow();
   void printLine(std::string s);
   void print(std::string s);

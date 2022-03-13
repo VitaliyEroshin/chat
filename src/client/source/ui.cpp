@@ -64,7 +64,7 @@ void UserInterface::printBackspace() {
     return;
 
   buffer.left.pop_back();
-  std::cout << "\b \b";
+  std::cout << "\b";
   std::flush(std::cout);
 }
 
@@ -127,6 +127,7 @@ void UserInterface::initWindow() {
   std::flush(std::cout);
   for (int i = 0; i < windowHeight; ++i) {
     coursor.moveUp();
+    lineLength.pop_back();
   }
 }
 
@@ -135,6 +136,7 @@ void UserInterface::print(std::string s) {
 }
 
 void UserInterface::printLine(std::string s) {
+  lineLength.push_back(s.size());
   std::cout << s << "\n\r";
 }
 
