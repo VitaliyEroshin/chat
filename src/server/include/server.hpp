@@ -5,8 +5,29 @@
 #include <iostream>
 #include <unordered_set>
 #include "socket.hpp"
+#include "storage.hpp"
 
 class Server {
+  struct Connection {
+    enum Status {
+      unauthorized,
+      inmenu,
+      inchat,
+      inprofile
+    };
+
+    Socket* socket;
+    userid_t user;
+    chatid_t chat;
+    Status status;
+
+    Connection(Socket* socket);
+  };
+
+  Storage storage;
+  friend bool operator<(const Connection& first, const Connection& second);
+  friend bool operator==(const Connection& first, const Connection& second);
+
 public:
   Server(int port);
   void loop();
@@ -15,7 +36,7 @@ public:
   Socket socket;
 
 private:
-  std::set<Socket*> sockets;
+  std::set<Connection> connections;
     
   fd_set readset;
   void fillSocketSet();

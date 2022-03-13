@@ -1,5 +1,17 @@
 #include "server.hpp"
 
+bool operator<(const Server::Connection& first, const Server::Connection& second) {
+  return first.socket->descriptor < second.socket->descriptor;
+}
+
+bool operator==(const Server::Connection& first, const Server::Connection& second) {
+  return first.socket->descriptor == second.socket->descriptor;
+}
+
+Server::Connection::Connection(Socket* socket)
+  : socket(socket), status(unauthorized) {};
+
+
 Server::Server(int port): socket(Socket(port)) {
   if (socket.setSocketOption(SO_REUSEADDR, 1) != 0) {
     std::cout << "Socket option setting failed." << std::endl;
@@ -22,9 +34,9 @@ void Server::loop() {
     
     int maxDescriptor = socket.descriptor;
 
-    for (auto &x : sockets) {
-      FD_SET(x->descriptor, &readset);
-      maxDescriptor = std::max(maxDescriptor, x->descriptor);
+    for (auto &x : connections) {
+      FD_SET(x.socket->descriptor, &readset);
+      maxDescriptor = std::max(maxDescriptor, x.socket->descriptor);
     }
   
     int activity = select(maxDescriptor + 1, &readset, NULL, NULL, NULL);
@@ -33,40 +45,38 @@ void Server::loop() {
       std::cout << "Accepted new connection, FD(" << new_socket->descriptor << ") ";
       std::cout << "ip: " << new_socket->getIpAddress() << ":" << new_socket->getPort() << "\n";
       new_socket->send("Hello, you have been connected.");
-      sockets.insert(new_socket);
+      connections.insert(Connection(new_socket));
     }
-
-    std::vector<Socket*> disconnected;
-    for (auto &sd : sockets) {
-      if (FD_ISSET(sd->descriptor, &readset)) {
+    std::vector<Connection> disconnected;
+    for (auto &peer : connections) {
+      if (FD_ISSET(peer.socket->descriptor, &readset)) {
         char buffer[1024];
         
-        int valread = cstd::read(sd->descriptor , buffer, 1024);
+        int valread = cstd::read(peer.socket->descriptor , buffer, 1024);
 
         if (valread == 0) {
-          sd->getPeerName();
-          std::cout << "Peer disconnected, FD(" << sd->descriptor << ") ";
-          std::cout << "ip: " << sd->getIpAddress() << ":" << sd->getPort() << "\n";
-          sd->~Socket();
-          disconnected.push_back(sd);
+          peer.socket->getPeerName();
+          std::cout << "Peer disconnected, FD(" << peer.socket->descriptor << ") ";
+          std::cout << "ip: " << peer.socket->getIpAddress() << ":" << peer.socket->getPort() << "\n";
+          peer.socket->~Socket();
+          disconnected.push_back(peer.socket);
         } else {
-          // LEGACY
           buffer[valread] = '\0';
           std::cout << "Received: " << buffer << ' ' << valread << '\n';
-          for (auto &jd : sockets) {
-            if (jd == sd) {
+          for (auto &other : connections) {
+            if (other == peer) {
               continue;
             }
-            std::cout << "Trying to send to " << jd->descriptor << " - ";
-
-            jd->send(buffer, valread);
-          }
           
+            std::cout << "Trying to send to " << other.socket->descriptor << " - ";
+
+            other.socket->send(buffer, valread);
+          }
         }
       }
     }
     while (!disconnected.empty()) {
-      sockets.erase(disconnected.back());
+      connections.erase(disconnected.back());
       disconnected.pop_back();
     }
   }
