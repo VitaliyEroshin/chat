@@ -6,7 +6,12 @@ add_executable(client ${CLIENT_SOURCES})
 target_include_directories(client PUBLIC ${CLIENT_DIR}/include/)
 target_include_directories(client PUBLIC ${SOCKET_LIB_DIR}/include/)
 
-target_link_libraries(client PRIVATE sockets_lib)
+find_package (Threads REQUIRED)
+
+target_link_libraries(client PRIVATE 
+    sockets_lib 
+    ${CMAKE_THREAD_LIBS_INIT}
+)
 
 set_target_properties(client
     PROPERTIES

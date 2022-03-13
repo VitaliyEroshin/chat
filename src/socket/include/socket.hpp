@@ -11,6 +11,15 @@ namespace cstd {
   #include <arpa/inet.h>
 }
 
+#ifdef unix
+  #define in_addr_t cstd::in_addr_t
+  #define htonl cstd::htonl
+  #define htons cstd::htons
+#endif
+
+#undef SOCK_STREAM
+const int SOCK_STREAM = 1;
+
 class Socket {
 public:
   typedef cstd::sockaddr_in Address;
@@ -37,5 +46,5 @@ public:
   int getPort();
 
 private:
-  std::pair<cstd::sockaddr*, cstd::socklen_t*> getAddress();
+  std::pair<cstd::sockaddr*, unsigned int*> getAddress();
 };

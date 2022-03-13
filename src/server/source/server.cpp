@@ -27,7 +27,7 @@ void Server::loop() {
       maxDescriptor = std::max(maxDescriptor, x->descriptor);
     }
   
-    int activity = cstd::select(maxDescriptor + 1, &readset, NULL, NULL, NULL);
+    int activity = select(maxDescriptor + 1, &readset, NULL, NULL, NULL);
     if (FD_ISSET(socket.descriptor, &readset)) {
       Socket* new_socket = new Socket(socket.accept());
       std::cout << "Accepted new connection, FD(" << new_socket->descriptor << ") ";

@@ -7,7 +7,7 @@ void Socket::setAddress(int port) {
 }
 
 Socket::Socket(int port) {
-  descriptor = cstd::socket(domain, SOCK_STREAM, 0);
+  descriptor = cstd::socket(domain, cstd::SOCK_STREAM, 0);
   setAddress(port);
 }
 
@@ -39,7 +39,7 @@ std::string Socket::getIpAddress() {
   return std::string(cstd::inet_ntoa(address.sin_addr));
 }
 
-std::pair<cstd::sockaddr*, cstd::socklen_t*> Socket::getAddress() {
+std::pair<cstd::sockaddr*, unsigned int*> Socket::getAddress() {
   static cstd::socklen_t addressLength = sizeof(address);
   return {reinterpret_cast<cstd::sockaddr*>(&address), &addressLength};
 }
