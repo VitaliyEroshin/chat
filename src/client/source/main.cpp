@@ -14,7 +14,7 @@ void readUserInput(std::atomic<bool>& run) {
       client.socket.~Socket();
       return;
     }
-    client.socket.send(command);
+    client.sendText(command);
   }
 }
 
