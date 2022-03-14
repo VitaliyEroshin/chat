@@ -25,6 +25,7 @@ class Server {
   };
 
   Storage storage;
+  Encoder encoder;
   friend bool operator<(const Connection& first, const Connection& second);
   friend bool operator==(const Connection& first, const Connection& second);
 
@@ -40,4 +41,5 @@ private:
     
   fd_set readset;
   void fillSocketSet();
+  void parseQuery(char* buffer, int valread, const Connection& user);
 };

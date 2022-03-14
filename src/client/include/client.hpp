@@ -7,6 +7,7 @@
 #include <vector>
 #include "ui.hpp"
 #include "socket.hpp"
+#include "encoder.hpp"
 
 class Client {
 private:
@@ -21,8 +22,10 @@ public:
   Client::Status status;
   Socket socket;
   UserInterface ui;
+  Encoder encoder;
 
   Client();
   
   int connect();
+  void sendText(const std::string& text);
 };

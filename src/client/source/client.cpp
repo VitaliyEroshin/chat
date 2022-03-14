@@ -37,3 +37,12 @@ int Client::connect() {
 
   return cstd::connect(socket.descriptor, (cstd::sockaddr*)&(socket.address), sizeof(socket.address));
 }
+
+void Client::sendText(const std::string& text) {
+  Object obj;
+  obj.message = text;
+  obj.type = Object::Type::text;
+  obj.id = 1555;
+  std::string en = encoder.encode(obj);
+  socket.send(en);
+}

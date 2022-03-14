@@ -63,15 +63,8 @@ void Server::loop() {
         } else {
           buffer[valread] = '\0';
           std::cout << "Received: " << buffer << ' ' << valread << '\n';
-          for (auto &other : connections) {
-            if (other == peer) {
-              continue;
-            }
           
-            std::cout << "Trying to send to " << other.socket->descriptor << " - ";
-
-            other.socket->send(buffer, valread);
-          }
+          parseQuery(buffer, valread, peer);
         }
       }
     }
@@ -85,4 +78,27 @@ void Server::loop() {
 void Server::fillSocketSet() {
   FD_ZERO(&readset);
   FD_SET(socket.descriptor, &readset);
+}
+
+void Server::parseQuery(char* buffer, int valread, const Connection& user) {
+  std::string query;
+  for (size_t i = 0; i < valread; ++i) {
+    query.push_back(buffer[i]);
+  }
+
+  Object obj = encoder.decode(query);
+  std::cout << "Received message from " << user.socket->descriptor << '\n';
+  std::cout << "  Message: " << obj.message << '\n';
+  
+  if (obj.type == Object::Type::text) {
+    for (auto &other : connections) {
+      if (other == user) {
+        continue;
+      }
+          
+      std::cout << "Trying to send to " << other.socket->descriptor << " - ";
+
+      other.socket->send(encoder.encode(obj));
+    }
+  }
 }
