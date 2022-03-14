@@ -21,18 +21,3 @@ public:
   
   bool checkPassword(const password_t& password);
 };
-
-typedef u_int64_t objectid_t;
-
-struct Object {
-  objectid_t id;
-  userid_t author;
-
-  objectid_t terminal;
-  int timestamp;
-  objectid_t parentId;
-
-  std::string message;
-
-  void editMessage();
-};

@@ -50,7 +50,7 @@ void Server::loop() {
     std::vector<Connection> disconnected;
     for (auto &peer : connections) {
       if (FD_ISSET(peer.socket->descriptor, &readset)) {
-        char buffer[1024];
+        char buffer[1025];
         
         int valread = cstd::read(peer.socket->descriptor , buffer, 1024);
 

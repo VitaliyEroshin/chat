@@ -6,7 +6,7 @@
 #include <map>
 
 #include "entities.hpp"
-#include "compression.hpp"
+#include "encoder.hpp"
 
 typedef u_int16_t chatid_t;
 
@@ -24,8 +24,6 @@ class Storage {
     Object object;
     objectid_t next;
   };
-
-  Compression compress;
 
 public:
   std::map<chatid_t, Chat> chats;
