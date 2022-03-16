@@ -9,6 +9,7 @@ project (
 
 set(CMAKE_CXX_STANDARD 17)
 
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/objects)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/socket)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/server)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/client)
