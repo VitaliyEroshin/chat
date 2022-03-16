@@ -38,8 +38,10 @@ public:
 
 private:
   std::set<Connection> connections;
-    
+  
   fd_set readset;
-  void fillSocketSet();
+  void acceptConnection();
+  void selectDescriptor();
+  void removeConnection(const Connection& peer);
   void parseQuery(char* buffer, int valread, const Connection& user);
 };
