@@ -99,8 +99,7 @@ Object Encoder::decode(const Encoder::bytes& bytes) {
     obj.id = fromBytes<objectid_t>(bytes.substr(ptr, sizeof(objectid_t)));
     ptr += sizeof(objectid_t);
   }
-  
-  
+
   for (int i = ptr; i < bytes.size(); ++i) {
     obj.message += bytes[i];
   }

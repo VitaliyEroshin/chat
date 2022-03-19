@@ -1,10 +1,6 @@
 #pragma once
 #include <string>
-
-typedef u_int64_t objectid_t;
-typedef std::string object_author_t;
-typedef std::string object_message_t;
-typedef u_int16_t code_t;
+#include "types.hpp"
 
 struct Object {
   enum class Type: char {
@@ -17,7 +13,7 @@ struct Object {
   objectid_t id;
   int timestamp;
   objectid_t parentId;
-  object_author_t author;
+  userid_t author;
   code_t ret;
   Type type;
   object_message_t message;

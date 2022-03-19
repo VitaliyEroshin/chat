@@ -5,12 +5,10 @@
 
 #include <sys/ioctl.h>
 #include <unistd.h>
+#include "types.hpp"
 
 class UserInterface {
 public:
-  typedef std::string output_t;
-  typedef char output_char_t;
-
   struct Output {
     struct Window {
       size_t height;

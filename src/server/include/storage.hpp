@@ -1,14 +1,11 @@
 #pragma once
 #include <vector>
-#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <map>
 
 #include "entities.hpp"
 #include "encoder.hpp"
-
-typedef u_int16_t chatid_t;
 
 class Storage {
   struct Chat {
