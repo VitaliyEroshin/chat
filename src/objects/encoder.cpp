@@ -3,6 +3,14 @@
 char Encoder::getTypeId(const Object& object) {
   if (object.type == Object::Type::text) {
     return 1;
+  } 
+
+  if (object.type == Object::Type::loginAttempt) {
+    return 2;
+  }
+
+  if (object.type == Object::Type::returnCode) {
+    return 3;
   }
 
   return 0;
@@ -11,6 +19,14 @@ char Encoder::getTypeId(const Object& object) {
 Object::Type Encoder::fromTypeId(char id) {
   if (id == 1) {
     return Object::Type::text;
+  }
+
+  if (id == 2) {
+    return Object::Type::loginAttempt;
+  }
+
+  if (id == 3) {
+    return Object::Type::returnCode;
   }
 
   return Object::Type::unknown;
@@ -47,8 +63,18 @@ T Encoder::fromBytes(const Encoder::bytes& b) {
 }
 
 Encoder::bytes Encoder::encode(const Object& object) {
-  std::string s;
+  std::string s = "";
   s.push_back(getTypeId(object));
+
+  if (object.type == Object::Type::loginAttempt) {
+    s += object.message;
+    return s;
+  }
+  if (object.type == Object::Type::returnCode) {
+    s += toBytes(object.ret);
+    return s;
+  }
+
   s += toBytes(object.id);
   // s += toBytes(object.author);
   // s += toBytes(object.timestamp);
@@ -61,10 +87,20 @@ Object Encoder::decode(const Encoder::bytes& bytes) {
   Object obj;
   
   char type = bytes[0];
-  int ptr = 1;
   obj.type = fromTypeId(type);
-  obj.id = fromBytes<objectid_t>(bytes.substr(ptr, sizeof(objectid_t)));
-  ptr += sizeof(objectid_t);
+
+  int ptr = 1;
+  if (obj.type == Object::Type::returnCode) {
+    obj.ret = fromBytes<code_t>(bytes.substr(ptr, sizeof(code_t)));
+    return obj;
+  }
+
+  if (obj.type != Object::Type::loginAttempt) {
+    obj.id = fromBytes<objectid_t>(bytes.substr(ptr, sizeof(objectid_t)));
+    ptr += sizeof(objectid_t);
+  }
+  
+  
   for (int i = ptr; i < bytes.size(); ++i) {
     obj.message += bytes[i];
   }

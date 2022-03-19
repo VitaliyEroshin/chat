@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <list>
 #include <unordered_set>
 #include "socket.hpp"
 #include "storage.hpp"
@@ -37,11 +38,12 @@ public:
   Socket socket;
 
 private:
-  std::set<Connection> connections;
+  std::list<Connection> connections;
   
   fd_set readset;
   void acceptConnection();
   void selectDescriptor();
   void removeConnection(const Connection& peer);
-  void parseQuery(char* buffer, int valread, const Connection& user);
+  void parseQuery(char* buffer, int valread, Connection& user);
+  void parseAuthData(const std::string& query, Connection& user);
 };

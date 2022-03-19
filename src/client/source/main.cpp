@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "client.hpp"
 #include "ui.hpp"
 
@@ -5,16 +6,20 @@ Client client;
 
 void readUserInput(std::atomic<bool>& run) {
   while (run.load()) {
-    std::string command = client.ui.input("> ");
-    client.ui.clearPreviousLine();
+    std::string command = client.ui.input({client.ui.out.window.height - 2, 4}, {1, client.ui.out.window.width - 8});
     
-    client.ui.printLine(command);
+    client.ui.print({client.ui.out.window.height - 2, 4}, {1, client.ui.out.window.width - 8}, "");
     if (command == "/quit") {
       run.store(false);
       client.socket.~Socket();
       return;
     }
+    if (command == "") {
+      continue;
+    }
+  
     client.sendText(command);
+    client.refreshMessages();
   }
 }
 
@@ -33,23 +38,22 @@ void readServer(std::atomic<bool>& run) {
       message.push_back(buffer[i]);
     }
     
-    
-    std::cout << "\r";
-    std::cout << std::string(3 + client.ui.buffer.left.size() + client.ui.buffer.right.size(), ' ');
-    std::cout << "\r";
-    std::cout << message << "(" << readBytes << " bytes)";
-    std::flush(std::cout);
-    std::cout << "\n\r" << client.ui.inputInvite;
-    std::cout << client.ui.buffer.left;
-    std::flush(std::cout);
-    for (auto &x : client.ui.buffer.right) {
-      std::cout << x;
+    Object obj = client.encoder.decode(message);
+    if (obj.type == Object::Type::text) {
+      std::string temp = "";
+      for (int i = 0; i < obj.message.size(); ++i) {
+        temp.push_back(obj.message[i]);
+        if ((i + 1) % (client.ui.out.window.width - 8) == 0) {
+          client.data.insert(temp);
+          temp = "";
+        }
+      }
+      if (!temp.empty()) {
+        client.data.insert(temp);
+      }
+      // client.data.insert(obj.message);
+      client.refreshMessages();
     }
-    for (auto &x : client.ui.buffer.right) {
-      client.ui.coursor.moveLeft();
-    }
-
-    std::flush(std::cout);
   }
 }
 
@@ -62,22 +66,59 @@ void listen() {
   serverReadThread.join();
 }
 
-int session() {
-  client.ui.initWindow();
-  int rcode = client.connect();
-  if (rcode < 0) {
-    std::cout << "Connection failed. (" << rcode << ")\n\r";
-    return 1;
+void showBackground(std::atomic<bool>& connecting) {
+  client.ui.clearWindow();
+  int i = 0;
+  while (connecting.load()) {
+    client.ui.print({1, 1}, {1, 20}, "Loading" + std::string(i++ + 1, '.'));
+    i %= 5;
+    usleep(300 * 1000);
   }
-  std::cout << "Connected\n\r";
+  client.ui.clearWindow();
+}
+
+int connect() {
+  client.setupAddress();
+  std::atomic<bool> connecting(true);
+  std::thread background(showBackground, std::ref(connecting));
+  
+  if (client.connectToHost() < 0) {
+    sleep(2);
+    connecting.store(false);
+    usleep(500 * 1000);
+    client.status = Client::Status::failed;
+    client.ui.print({1, 1}, {1, 20}, "Connection failed");
+    sleep(2);
+  }
+
+  connecting.store(false);
+  background.join();
+  if (client.status == Client::Status::failed) {
+    return -1;
+  }
+
+  client.status = Client::Status::authentification;
+  client.ui.print({1, 1}, {1, 20}, "Connected!");
+  usleep(300 * 1000);
+  client.ui.clearWindow();
+  return 0;
+}
+
+int session() {
+  if (connect() < 0) {
+    return -1;
+  }
+  
+  if (client.auth() < 0) {
+    return -1;
+  }
+
+  client.initializeGUI();
   listen();
   
   return 0;
 }
 
 int main() {
-  system("stty raw -echo");
   session();
-
-  system("stty cooked echo");
 }

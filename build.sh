@@ -1,5 +1,2 @@
-./clear.sh
-mkdir build
-cd build
-cmake ..
-make
+cmake -B build
+cmake --build build -j 4
