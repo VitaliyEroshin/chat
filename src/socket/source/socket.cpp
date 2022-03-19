@@ -35,8 +35,8 @@ Socket Socket::accept() {
   return peer;
 }
 
-std::string Socket::getIpAddress() {
-  return std::string(cstd::inet_ntoa(address.sin_addr));
+std::string Socket::getIpAddress() const {
+  return {cstd::inet_ntoa(address.sin_addr)};
 }
 
 std::pair<cstd::sockaddr*, unsigned int*> Socket::getAddress() {
@@ -44,16 +44,27 @@ std::pair<cstd::sockaddr*, unsigned int*> Socket::getAddress() {
   return {reinterpret_cast<cstd::sockaddr*>(&address), &addressLength};
 }
 
-void Socket::send(std::string message) {
+void Socket::send(const std::string& message) const {
   cstd::send(descriptor, message.c_str(), message.length(), 0);
 }
 
-void Socket::send(char* buffer) {
-  cstd::send(descriptor, buffer, sizeof(buffer), 0);
+void Socket::send(char* buff) const {
+  cstd::send(descriptor, buff, sizeof(buff), 0);
 }
 
-void Socket::send(char* buffer, size_t length) {
-  cstd::send(descriptor, buffer, length, 0);
+void Socket::send(char* buff, size_t length) const {
+  cstd::send(descriptor, buff, length, 0);
+}
+
+char Socket::buffer[bufferSize];
+
+std::string Socket::read() const {
+  int bytes = cstd::read(descriptor, buffer, bufferSize);
+  std::string s;
+  for (size_t i = 0; i < bytes; ++i) {
+    s.push_back(buffer[i]);
+  }
+  return s;
 }
 
 void Socket::getPeerName() {
@@ -61,6 +72,22 @@ void Socket::getPeerName() {
   cstd::getpeername(descriptor, peerAddress.first, peerAddress.second);
 }
 
-int Socket::getPort() {
+int Socket::getPort() const {
   return address.sin_port;
+}
+
+void DescriptorSet::set(int descriptor) {
+  FD_SET(descriptor, reference());
+}
+
+void DescriptorSet::clear() {
+  FD_ZERO(reference());
+}
+
+bool DescriptorSet::count(int descriptor) {
+  return FD_ISSET(descriptor, reference());
+}
+
+fd_set* DescriptorSet::reference() {
+  return &descriptors;
 }

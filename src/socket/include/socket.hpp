@@ -30,10 +30,13 @@ public:
 
   const int domain = AF_INET;
 
-  int descriptor;
-  Address address;
+  static const size_t bufferSize = 1024;
+  static char buffer[bufferSize];
 
-  Socket(int port);
+  int descriptor = 0;
+  Address address{};
+
+  explicit Socket(int port);
   Socket() = default;
   ~Socket();
 
@@ -42,13 +45,22 @@ public:
   int listen(int backlog);
   void setAddress(int port);
   Socket accept();
-  std::string getIpAddress();
-  void send(std::string message);
-  void send(char* buffer);
-  void send(char* buffer, size_t length);
+  std::string getIpAddress() const;
+  void send(const std::string& message) const;
+  void send(char* buffer) const;
+  void send(char* buffer, size_t length) const;
+  std::string read() const;
   void getPeerName();
-  int getPort();
+  int getPort() const;
 
 private:
   std::pair<cstd::sockaddr*, unsigned int*> getAddress();
+};
+
+struct DescriptorSet {
+  fd_set descriptors;
+  void set(int descriptor);
+  void clear();
+  bool count(int descriptor);
+  fd_set* reference();
 };
