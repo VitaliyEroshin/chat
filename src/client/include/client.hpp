@@ -3,11 +3,18 @@
 #include <iostream>
 #include <atomic>
 #include <thread>
-#include <unistd.h>
 #include <vector>
-#include "ui.hpp"
+#include <list>
 #include "socket.hpp"
 #include "encoder.hpp"
+#include "ui.hpp"
+
+struct ObjectTree {
+  std::list<Object> objects;
+  std::list<Object>::iterator head;
+
+  void insert(const std::string& text);
+};
 
 class Client {
 private:
@@ -15,17 +22,22 @@ private:
   
 public:
   enum Status {
-    offline,
-    online
+    offline, online, connecting, authentification, failed
   };
 
   Client::Status status;
   Socket socket;
   UserInterface ui;
   Encoder encoder;
+  ObjectTree data;
 
   Client();
   
-  int connect();
+  void setupAddress();
+  int connectToHost();
+  int auth();
+  void initializeGUI();
+  void refreshMessages();
+
   void sendText(const std::string& text);
 };
