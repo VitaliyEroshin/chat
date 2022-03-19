@@ -33,7 +33,7 @@ public:
   static const size_t bufferSize = 1024;
   static char buffer[bufferSize];
 
-  int descriptor;
+  int descriptor = 0;
   Address address{};
 
   explicit Socket(int port);

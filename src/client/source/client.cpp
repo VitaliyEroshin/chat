@@ -37,10 +37,6 @@ void Client::setupAddress() {
 }
 
 int Client::connectToHost() {
-  struct timeval timeout;
-  timeout.tv_sec = 7;
-  timeout.tv_usec = 0;
-
   return cstd::connect(socket.descriptor, (cstd::sockaddr*)&(socket.address), sizeof(socket.address));
 }
 
