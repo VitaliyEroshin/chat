@@ -1,8 +1,7 @@
 #include "client.hpp"
 
-Client::Client()
-  : status(Status::offline), socket(Socket(8888)), ui(UserInterface())  {
-
+Client::Client(Encoder& encoder)
+  : status(Status::offline), socket(Socket(8888)), ui(UserInterface()), encoder(encoder) {
 }
 
 bool Client::setAddress(std::string ip, int port) {

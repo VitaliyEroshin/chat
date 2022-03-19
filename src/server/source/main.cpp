@@ -2,6 +2,7 @@
 #include "server.hpp"
 
 int main() {
-  Server server(8888);
+  StrEncoder encoder;
+  Server server(8888, encoder);
   server.loop();
 }

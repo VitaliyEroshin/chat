@@ -2,7 +2,8 @@
 #include "client.hpp"
 #include "ui.hpp"
 
-Client client;
+StrEncoder encoder;
+Client client(encoder);
 
 void readUserInput(std::atomic<bool>& run) {
   while (run.load()) {

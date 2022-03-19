@@ -1,6 +1,6 @@
 #include "encoder.hpp"
 
-char Encoder::getTypeId(const Object& object) {
+char StrEncoder::getTypeId(const Object& object) {
   if (object.type == Object::Type::text) {
     return 1;
   } 
@@ -16,7 +16,7 @@ char Encoder::getTypeId(const Object& object) {
   return 0;
 }
 
-Object::Type Encoder::fromTypeId(char id) {
+Object::Type StrEncoder::fromTypeId(char id) {
   if (id == 1) {
     return Object::Type::text;
   }
@@ -33,7 +33,7 @@ Object::Type Encoder::fromTypeId(char id) {
 }
 
 template<typename T>
-Encoder::bytes Encoder::toBytes(T id) {
+Encoder::bytes StrEncoder::toBytes(T id) {
   const auto size = sizeof(T);
   char result[size];
     
@@ -48,7 +48,7 @@ Encoder::bytes Encoder::toBytes(T id) {
 }
 
 template<typename T>
-T Encoder::fromBytes(const Encoder::bytes& b) {
+T StrEncoder::fromBytes(const Encoder::bytes& b) {
   const auto size = sizeof(T);
   T result;
   const char* rawBytes = b.c_str();
@@ -62,7 +62,7 @@ T Encoder::fromBytes(const Encoder::bytes& b) {
   return result;
 }
 
-Encoder::bytes Encoder::encode(const Object& object) {
+Encoder::bytes StrEncoder::encode(const Object& object) {
   std::string s = "";
   s.push_back(getTypeId(object));
 
@@ -83,7 +83,7 @@ Encoder::bytes Encoder::encode(const Object& object) {
   return s;
 }
 
-Object Encoder::decode(const Encoder::bytes& bytes) {
+Object StrEncoder::decode(const Encoder::bytes& bytes) {
   Object obj;
   
   char type = bytes[0];

@@ -25,13 +25,14 @@ namespace cstd {
 const int SOCK_STREAM = 1;
 
 class Socket {
+private:
+  static const size_t bufferSize = 1024;
+  static char buffer[bufferSize];
+
 public:
   typedef cstd::sockaddr_in Address;
 
   const int domain = AF_INET;
-
-  static const size_t bufferSize = 1024;
-  static char buffer[bufferSize];
 
   int descriptor = 0;
   Address address{};
