@@ -1,5 +1,5 @@
 #include "server.hpp"
-#include <cassert>
+
 bool operator<(const Server::Connection& first, const Server::Connection& second) {
   return first.socket->descriptor < second.socket->descriptor;
 }
@@ -53,7 +53,7 @@ void Server::selectDescriptor() {
       maxDescriptor = std::max(maxDescriptor, x.socket->descriptor);
   }
   
-  select(maxDescriptor + 1, &readset, NULL, NULL, NULL);
+  select(maxDescriptor + 1, &readset, nullptr, nullptr, nullptr);
 }
 
 [[noreturn]] void Server::loop() {
@@ -70,27 +70,19 @@ void Server::selectDescriptor() {
       Connection& peer = *current;
       
       if (FD_ISSET(peer.socket->descriptor, &readset)) {
-        int readValue = cstd::read(peer.socket->descriptor, buffer, 1024);
-        if (readValue == 0) {
+        std::string query = peer.socket->read();
+        if (query.empty()) {
           removeConnection(peer);
           connections.erase(current);
         } else {
-          parseQuery(buffer, readValue, peer);
+          parseQuery(query, peer);
         }
       }
     }
   }
 }
 
-void Server::parseQuery(char* buffer, int valread, Connection& user) {
-  if (valread <= 0) {
-    return;
-  }
-  std::string query;
-  for (size_t i = 0; i < valread; ++i) {
-    query.push_back(buffer[i]);
-  }
-
+void Server::parseQuery(const std::string& query, Connection& user) {
   Object obj = encoder.decode(query);
   std::cout << "Received message from " << user.socket->descriptor << '\n';
   std::cout << "  Message: " << query << '\n';

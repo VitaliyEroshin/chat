@@ -56,17 +56,7 @@ int Client::auth() {
 
   socket.send(encoder.encode(obj));
 
-  char buffer[1025];
-  int readBytes = cstd::read(socket.descriptor, buffer, 1024);
-  if (readBytes <= 0) {
-    ui.print({4, 1}, "Disconnected");
-    return -1;
-  }
-
-  std::string query;
-  for (size_t i = 0; i < readBytes; ++i) {
-    query.push_back(buffer[i]);
-  }
+  std::string query = socket.read();
 
   obj = encoder.decode(query);
 

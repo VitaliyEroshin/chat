@@ -45,6 +45,7 @@ private:
   void acceptConnection();
   void selectDescriptor();
   void removeConnection(const Connection& peer);
-  void parseQuery(char* buffer, int valread, Connection& user);
+  // void parseQuery(char* buffer, int valread, Connection& user);
+  void parseQuery(const std::string& query, Connection& user);
   void parseAuthData(const std::string& query, Connection& user);
 };
