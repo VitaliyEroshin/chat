@@ -32,7 +32,8 @@ class Server {
 
 public:
   Server(int port);
-  void loop();
+
+  [[noreturn]] void loop();
   ~Server() = default;
 
   Socket socket;

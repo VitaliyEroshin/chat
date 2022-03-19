@@ -57,7 +57,7 @@ int Client::auth() {
   socket.send(encoder.encode(obj));
 
   char buffer[1025];
-  int readBytes = cstd::recv(socket.descriptor, buffer, 1024, 0);
+  int readBytes = cstd::read(socket.descriptor, buffer, 1024);
   if (readBytes <= 0) {
     ui.print({4, 1}, "Disconnected");
     return -1;
@@ -98,7 +98,6 @@ void Client::initializeGUI() {
 }
 
 void Client::refreshMessages() {
-  ui.log(1, "CRSR(" + std::to_string(ui.cursor.position.x) + ";" + std::to_string(ui.cursor.position.y) + ")");
   ui.print({1, 1}, {ui.out.window.height - 3, ui.out.window.width - 2}, "");
   auto it = data.head;
   for (int i = 0; i < ui.out.window.height - 4; ++i) {
@@ -109,13 +108,12 @@ void Client::refreshMessages() {
     --it;
         
   }
-  ui.log(1, "CRSR(" + std::to_string(ui.cursor.position.x) + ";" + std::to_string(ui.cursor.position.y) + ")");
 }
 
 void ObjectTree::insert(const std::string& text) {
   Object obj;
   obj.message = text;
-  if (objects.size() == 0) {
+  if (objects.empty()) {
     head = objects.begin();
     objects.insert(head, obj);
 

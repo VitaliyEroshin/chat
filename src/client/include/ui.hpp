@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <deque>
+
 #include <sys/ioctl.h>
 #include <unistd.h>
 
@@ -97,7 +98,9 @@ public:
   void processInputBackspace(Cursor::Position pivot, Cursor::Position end, Cursor::Position size);
   void refreshInputBuffer(Cursor::Position pivot, Cursor::Position size);
   void clearWindow();
-  
+
+  size_t getWindowHeight() const { return out.window.height; };
+  size_t getWindowWidth() const { return out.window.width; }
   void log(size_t cell, output_t s);
 
   void scrollChatUp() {

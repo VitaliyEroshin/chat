@@ -3,12 +3,11 @@
 #include <iostream>
 #include <atomic>
 #include <thread>
-#include <unistd.h>
 #include <vector>
 #include <list>
-#include "ui.hpp"
 #include "socket.hpp"
 #include "encoder.hpp"
+#include "ui.hpp"
 
 struct ObjectTree {
   std::list<Object> objects;

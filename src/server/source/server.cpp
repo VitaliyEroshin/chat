@@ -56,7 +56,7 @@ void Server::selectDescriptor() {
   select(maxDescriptor + 1, &readset, NULL, NULL, NULL);
 }
 
-void Server::loop() {
+[[noreturn]] void Server::loop() {
   char buffer[1025];
   while (true) {
     selectDescriptor();

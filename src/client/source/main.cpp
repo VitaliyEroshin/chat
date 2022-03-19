@@ -72,7 +72,7 @@ void showBackground(std::atomic<bool>& connecting) {
   while (connecting.load()) {
     client.ui.print({1, 1}, {1, 20}, "Loading" + std::string(i++ + 1, '.'));
     i %= 5;
-    usleep(300 * 1000);
+    cstd::usleep(300 * 1000);
   }
   client.ui.clearWindow();
 }
@@ -83,12 +83,12 @@ int connect() {
   std::thread background(showBackground, std::ref(connecting));
   
   if (client.connectToHost() < 0) {
-    sleep(2);
+    cstd::sleep(2);
     connecting.store(false);
-    usleep(500 * 1000);
+    cstd::usleep(500 * 1000);
     client.status = Client::Status::failed;
     client.ui.print({1, 1}, {1, 20}, "Connection failed");
-    sleep(2);
+    cstd::sleep(2);
   }
 
   connecting.store(false);
@@ -99,7 +99,7 @@ int connect() {
 
   client.status = Client::Status::authentification;
   client.ui.print({1, 1}, {1, 20}, "Connected!");
-  usleep(300 * 1000);
+  cstd::usleep(300 * 1000);
   client.ui.clearWindow();
   return 0;
 }

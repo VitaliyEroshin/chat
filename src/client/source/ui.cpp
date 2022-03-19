@@ -4,7 +4,6 @@ void UserInterface::print(
         Cursor::Position pivot, Cursor::Position size, const output_t& text) {
   
   auto pos = cursor.position;
-  Cursor::Position absolute{pivot.x + size.x, pivot.y + size.y};
   cursor.moveTo(pivot);
 
   for (size_t i = 0; i < size.x * size.y; ++i) {
@@ -28,29 +27,28 @@ void UserInterface::print(
 }
 
 void UserInterface::log(size_t cell, output_t s) {
-  print({out.window.height - 1, out.window.width - 21 - 20 * cell}, {1, 20}, s);
+  print({getWindowHeight() - 1, getWindowWidth() - 21 - 20 * cell}, {1, 20}, s);
   out.flush();
 }
 
 UserInterface::output_t UserInterface::input(
         Cursor::Position pivot, Cursor::Position size, size_t characterLimit) {
-  log(1, "CRSR(" + std::to_string(cursor.position.x) + ";" + std::to_string(cursor.position.y) + ")");
+
   output_char_t c = 0;
   auto pos = cursor.position;
   cursor.moveTo(pivot);
   out.flush();
 
   Cursor::Position end{pivot.x + size.x - 1, pivot.y + size.y - 1};
-  while (!keyboard.isEnter(c)) {
-    log(1, "CRSR(" + std::to_string(cursor.position.x) + ";" + std::to_string(cursor.position.y) + ")");
+  while (!UserInterface::Keyboard::isEnter(c)) {
     c = getchar();
     
-    if (keyboard.isArrow(c)) {
+    if (UserInterface::Keyboard::isArrow(c)) {
       processInputArrow(pivot, end);
       continue;
     }
 
-    if (keyboard.isBackspace(c)) {
+    if (UserInterface::Keyboard::isBackspace(c)) {
       processInputBackspace(pivot, end, size);
       continue;
     }
@@ -76,7 +74,7 @@ UserInterface::output_t UserInterface::input(
     }
   }
 
-  if (keyboard.isEnter(in.buffer.left.back())) {
+  if (UserInterface::Keyboard::isEnter(in.buffer.left.back())) {
     in.buffer.left.pop_back();
   }
 
@@ -96,7 +94,7 @@ UserInterface::output_t UserInterface::askForm(Cursor::Position pivot, Cursor::P
 
 void UserInterface::processInputArrow(Cursor::Position pivot, Cursor::Position end) {
   getchar();
-  auto direction = cursor.getDirection(getchar());
+  auto direction = UserInterface::Cursor::getDirection(getchar());
   if (direction == Cursor::Direction::left) {
     if (cursor.position == pivot || in.buffer.left.empty())
       return;
@@ -157,7 +155,7 @@ void UserInterface::processInputBackspace(Cursor::Position pivot, Cursor::Positi
 }
 
 void UserInterface::clearWindow() {
-  print({0, 0}, {out.window.height - 1, out.window.width - 1}, "");
+  print({0, 0}, {getWindowHeight() - 1, getWindowWidth() - 1}, "");
 }
 
 void UserInterface::Input::Buffer::moveLeft() {
@@ -177,7 +175,7 @@ void UserInterface::Input::Buffer::moveLeftAll() {
 }
 
 UserInterface::Output::Output(): out(std::cout) {
-  struct winsize size;
+  winsize size;
   ioctl(STDOUT_FILENO, TIOCGWINSZ, &size);
   window.height = size.ws_row;
   window.width = size.ws_col;
@@ -239,7 +237,7 @@ UserInterface::output_t UserInterface::Input::Buffer::getRight() {
 UserInterface::UserInterface()
   : out(Output()), cursor(out), in(Input(out, keyboard)) {
   system("stty raw -echo");
-  allocateSpace(out.window.height - 1);
+  allocateSpace(getWindowHeight() - 1);
 }
 
 UserInterface::~UserInterface() {
@@ -263,11 +261,11 @@ void UserInterface::allocateSpace(size_t n) {
 
   cursor.moveTo({0, 0});
   print("1");
-  cursor.moveTo({out.window.height - 1, 0});
+  cursor.moveTo({getWindowHeight() - 1, 0});
   print("2");
-  cursor.moveTo({0, out.window.width - 1});
+  cursor.moveTo({0, getWindowWidth() - 1});
   print("3");
-  cursor.moveTo({out.window.height - 1, out.window.width - 1});
+  cursor.moveTo({getWindowHeight() - 1, getWindowWidth() - 1});
   print("4");
 
   cursor.moveTo(pos);
@@ -281,5 +279,5 @@ void UserInterface::print(const output_t& s) {
 
 void UserInterface::print(output_char_t c) {
   out.out << c;
-  cursor.position.y += 1;
+  ++cursor.position.y;
 }
