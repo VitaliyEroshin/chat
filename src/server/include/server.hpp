@@ -44,7 +44,7 @@ private:
   DescriptorSet readset{};
   void acceptConnection();
   void selectDescriptor();
-  void removeConnection(const Connection& peer);
+  static void removeConnection(const Connection& peer);
   void parseQuery(const std::string& query, Connection& user);
   void parseAuthData(const std::string& query, Connection& user);
 };

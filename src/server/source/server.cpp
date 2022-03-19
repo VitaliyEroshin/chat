@@ -64,7 +64,7 @@ void Server::selectDescriptor() {
       acceptConnection();
     }
 
-    for (auto it = connections.begin(); it != connections.end();){
+    for (auto it = connections.begin(); it != connections.end();) {
       auto current = it++;
       Connection& peer = *current;
 
