@@ -46,5 +46,6 @@ private:
   void selectDescriptor();
   static void removeConnection(const Connection& peer);
   void parseQuery(const std::string& query, Connection& user);
-  void parseAuthData(const std::string& query, Connection& user);
+  void parseAuthData(const Object& object, Connection& user);
+  void addMessage(Object object, Connection& user);
 };

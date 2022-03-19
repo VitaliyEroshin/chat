@@ -102,7 +102,6 @@ void ObjectTree::insert(const std::string& text) {
   if (objects.empty()) {
     head = objects.begin();
     objects.insert(head, obj);
-
     return;
   }
   objects.insert(head, obj);

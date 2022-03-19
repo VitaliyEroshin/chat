@@ -87,53 +87,61 @@ void Server::parseQuery(const std::string& query, Connection& user) {
   std::cout << "  Message: " << query << '\n';
   
   if (obj.type == Object::Type::text) {
-    for (auto &other : connections) {
-      if (other == user) {
-        continue;
-      }
-          
-      std::cout << "Trying to send to " << other.socket->descriptor << " - ";
-
-      other.socket->send(encoder.encode(obj));
-    }
-  } else if (obj.type == Object::Type::loginAttempt) {
-    parseAuthData(obj.message, user);
+    addMessage(obj, user);
+    return;
+  }
+  if (obj.type == Object::Type::loginAttempt) {
+    parseAuthData(obj, user);
+    return;
   }
 }
 
-void Server::parseAuthData(const std::string& query, Connection& user) {
+void Server::parseAuthData(const Object& object, Connection& user) {
   int ptr;
   std::string login;
   std::string password;
 
-  for (ptr = 0; ptr < query.size() && query[ptr] != 1; ++ptr) {
-    login.push_back(query[ptr]);
+  for (ptr = 0; ptr < object.message.size() && object.message[ptr] != 1; ++ptr) {
+    login.push_back(object.message[ptr]);
   }
 
-  for (ptr = ptr + 1; ptr < query.size(); ++ptr) {
-    password.push_back(query[ptr]);
+  for (ptr = ptr + 1; ptr < object.message.size(); ++ptr) {
+    password.push_back(object.message[ptr]);
   }
 
-  Object obj;
-  obj.type = Object::Type::returnCode;
+  Object callback;
+  callback.type = Object::Type::returnCode;
 
   int code = storage.getUser(login, password);
   
   if (code == -2) {
       // wrong password
-      obj.ret = 2;
-      user.socket->send(encoder.encode(obj));
+      callback.ret = 2;
+      user.socket->send(encoder.encode(callback));
       return;
   }
   if (code == -1) {
     storage.addUser(login, password);
     code = storage.getUser(login, password);
-    obj.ret = 1;
-    user.socket->send(encoder.encode(obj));
+    callback.ret = 1;
+    user.socket->send(encoder.encode(callback));
   } else {
-    obj.ret = 0;
-    user.socket->send(encoder.encode(obj));
+    callback.ret = 0;
+    user.socket->send(encoder.encode(callback));
   }
   user.status = Server::Connection::Status::inmenu;
   user.user = code;
+}
+
+void Server::addMessage(Object object, Connection& user) {
+  object.author = user.user;
+  for (auto &other : connections) {
+    if (other == user) {
+      continue;
+    }
+
+    std::cout << "Trying to send to " << other.socket->descriptor << " - ";
+
+    other.socket->send(encoder.encode(object));
+  }
 }
