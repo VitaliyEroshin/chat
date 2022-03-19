@@ -75,3 +75,19 @@ void Socket::getPeerName() {
 int Socket::getPort() const {
   return address.sin_port;
 }
+
+void DescriptorSet::set(int descriptor) {
+  FD_SET(descriptor, reference());
+}
+
+void DescriptorSet::clear() {
+  FD_ZERO(reference());
+}
+
+bool DescriptorSet::count(int descriptor) {
+  return FD_ISSET(descriptor, reference());
+}
+
+fd_set* DescriptorSet::reference() {
+  return &descriptors;
+}

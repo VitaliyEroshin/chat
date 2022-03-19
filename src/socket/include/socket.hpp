@@ -56,3 +56,11 @@ public:
 private:
   std::pair<cstd::sockaddr*, unsigned int*> getAddress();
 };
+
+struct DescriptorSet {
+  fd_set descriptors;
+  void set(int descriptor);
+  void clear();
+  bool count(int descriptor);
+  fd_set* reference();
+};

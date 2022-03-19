@@ -18,11 +18,11 @@ class Server {
     };
 
     Socket* socket;
-    userid_t user;
-    chatid_t chat;
+    userid_t user{};
+    chatid_t chat{};
     Status status;
 
-    Connection(Socket* socket);
+    explicit Connection(Socket* socket);
   };
 
   Storage storage;
@@ -31,7 +31,7 @@ class Server {
   friend bool operator==(const Connection& first, const Connection& second);
 
 public:
-  Server(int port);
+  explicit Server(int port);
 
   [[noreturn]] void loop();
   ~Server() = default;
@@ -40,12 +40,11 @@ public:
 
 private:
   std::list<Connection> connections;
-  
-  fd_set readset;
+
+  DescriptorSet readset{};
   void acceptConnection();
   void selectDescriptor();
   void removeConnection(const Connection& peer);
-  // void parseQuery(char* buffer, int valread, Connection& user);
   void parseQuery(const std::string& query, Connection& user);
   void parseAuthData(const std::string& query, Connection& user);
 };

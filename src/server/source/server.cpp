@@ -26,12 +26,12 @@ Server::Server(int port): socket(Socket(port)) {
 }
 
 void Server::acceptConnection() {
-  Socket* new_socket = new Socket(socket.accept());
+  auto* new_socket = new Socket(socket.accept());
   std::cout << "Accepted new connection, FD(" << new_socket->descriptor << ") ";
   std::cout << "ip: " << new_socket->getIpAddress();
   std::cout << ":" << new_socket->getPort() << "\n";
   // new_socket->send("Hello, you have been connected.");
-  connections.push_back(Connection(new_socket));
+  connections.emplace_back(new_socket);
 }
 
 void Server::removeConnection(const Connection& peer) {
@@ -43,33 +43,32 @@ void Server::removeConnection(const Connection& peer) {
 }
 
 void Server::selectDescriptor() {
-  FD_ZERO(&readset);
-  FD_SET(socket.descriptor, &readset);
+  readset.clear();
+  readset.set(socket.descriptor);
     
   int maxDescriptor = socket.descriptor;
 
   for (auto &x : connections) {
-      FD_SET(x.socket->descriptor, &readset);
+      readset.set(x.socket->descriptor);
       maxDescriptor = std::max(maxDescriptor, x.socket->descriptor);
   }
-  
-  select(maxDescriptor + 1, &readset, nullptr, nullptr, nullptr);
+
+  select(maxDescriptor + 1, readset.reference(), nullptr, nullptr, nullptr);
 }
 
 [[noreturn]] void Server::loop() {
-  char buffer[1025];
   while (true) {
     selectDescriptor();
 
-    if (FD_ISSET(socket.descriptor, &readset)) {
+    if (readset.count(socket.descriptor)) {
       acceptConnection();
     }
 
     for (auto it = connections.begin(); it != connections.end();){
       auto current = it++;
       Connection& peer = *current;
-      
-      if (FD_ISSET(peer.socket->descriptor, &readset)) {
+
+      if (readset.count(peer.socket->descriptor)) {
         std::string query = peer.socket->read();
         if (query.empty()) {
           removeConnection(peer);
