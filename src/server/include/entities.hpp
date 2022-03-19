@@ -1,9 +1,6 @@
 #pragma once
+#include "types.hpp"
 #include <string>
-
-typedef u_int16_t userid_t;
-typedef std::string login_t;
-typedef std::string password_t;
 
 class User {
   struct Profile {

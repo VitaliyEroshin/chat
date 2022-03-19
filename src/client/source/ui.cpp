@@ -31,7 +31,7 @@ void UserInterface::log(size_t cell, output_t s) {
   out.flush();
 }
 
-UserInterface::output_t UserInterface::input(
+output_t UserInterface::input(
         Cursor::Position pivot, Cursor::Position size, size_t characterLimit) {
 
   output_char_t c = 0;
@@ -86,7 +86,7 @@ UserInterface::output_t UserInterface::input(
   return value;
 }
 
-UserInterface::output_t UserInterface::askForm(Cursor::Position pivot, Cursor::Position size, const output_t& text) {
+output_t UserInterface::askForm(Cursor::Position pivot, Cursor::Position size, const output_t& text) {
   print(pivot, text);
   pivot.y += text.size();
   return input(pivot, size);
@@ -226,7 +226,7 @@ void UserInterface::Cursor::moveTo(const Position& pos) {
     move(Direction::left);
 }
 
-UserInterface::output_t UserInterface::Input::Buffer::getRight() {
+output_t UserInterface::Input::Buffer::getRight() {
   output_t s;
   for (size_t i = right.size(); i > 0; --i) {
     s.push_back(right[i - 1]);

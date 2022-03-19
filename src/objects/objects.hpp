@@ -1,10 +1,6 @@
 #pragma once
 #include <string>
-
-typedef u_int64_t objectid_t;
-typedef u_int16_t userid_t;
-typedef std::string object_message_t;
-typedef u_int16_t code_t;
+#include "types.hpp"
 
 struct Object {
   enum class Type: char {
