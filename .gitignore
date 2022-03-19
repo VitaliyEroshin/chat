@@ -33,8 +33,10 @@
 
 # IDE folders
 .vscode
+.idea
 
 # Build files
 bin
 build
+cmake-build-debug
 
