@@ -28,10 +28,10 @@ public:
   Client::Status status;
   Socket socket;
   UserInterface ui;
-  Encoder encoder;
+  Encoder& encoder;
   ObjectTree data;
 
-  Client();
+  explicit Client(Encoder& encoder);
   
   void setupAddress();
   int connectToHost();

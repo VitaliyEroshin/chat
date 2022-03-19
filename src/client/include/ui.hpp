@@ -87,19 +87,24 @@ public:
   [[maybe_unused]] void testWindowCorners();
 
   void print(const output_t& s);
-
   void print(output_char_t c);
+  void print(Cursor::Position pivot, Cursor::Position size, const output_t& text);
+  void print(Cursor::Position pivot, const output_t& text);
 
   output_t input(Cursor::Position pivot, Cursor::Position size, size_t characterLimit = 256);
   output_t askForm(Cursor::Position pivot, Cursor::Position size, const output_t& text);
+
+private:
   void processInputArrow(Cursor::Position pivot, Cursor::Position end);
   void processInputBackspace(Cursor::Position pivot, Cursor::Position end, Cursor::Position size);
   void refreshInputBuffer(Cursor::Position pivot, Cursor::Position size);
+  void log(size_t cell, output_t s);
+
+public:
   void clearWindow();
 
   size_t getWindowHeight() const { return out.window.height; };
   size_t getWindowWidth() const { return out.window.width; }
-  void log(size_t cell, output_t s);
 
   void scrollChatUp() {
     // TODO
@@ -108,7 +113,4 @@ public:
   void scrollChatDown() {
     // TODO
   }
-
-  void print(Cursor::Position pivot, Cursor::Position size, const output_t& text);
-  void print(Cursor::Position pivot, const output_t& text);
 };
