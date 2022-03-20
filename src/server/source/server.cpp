@@ -12,7 +12,8 @@ Server::Connection::Connection(Socket* socket)
   : socket(socket), status(unauthorized) {};
 
 
-Server::Server(int port): socket(Socket(port)) {
+Server::Server(int port, Storage& storage)
+  : socket(Socket(port)), storage(storage) {
   if (socket.setSocketOption(SO_REUSEADDR, 1) != 0)
     std::cout << "Socket option setting failed." << std::endl;
 
