@@ -7,7 +7,7 @@ User::User(userid_t id, const login_t& login, const password_t& password)
 User::User()
   : id(0), login(""), password("") {};
 
-int Storage::getUser(const login_t& login, const password_t& password) {
+int RAMStorage::getUser(const login_t& login, const password_t& password) {
   if (!userids.count(login)) {
     return -1;
   }
@@ -20,7 +20,7 @@ int Storage::getUser(const login_t& login, const password_t& password) {
   return id;
 }
 
-int Storage::addUser(const login_t& login, const password_t& password) {
+int RAMStorage::addUser(const login_t& login, const password_t& password) {
   if (userids.count(login)) {
     return -1;
   }
@@ -31,6 +31,6 @@ int Storage::addUser(const login_t& login, const password_t& password) {
   return id;
 }
 
-userid_t Storage::generateUserId() {
+userid_t RAMStorage::generateUserId() {
   return users.size();
 }
