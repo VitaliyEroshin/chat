@@ -38,6 +38,13 @@ public:
   int auth();
   void initializeGUI();
   void refreshMessages();
-
   void sendText(const std::string& text);
+
+  int session();
+  int connect();
+  void showBackground(std::atomic<bool>& connecting);
+  void listen();
+
+  void readServer(std::atomic<bool>& run);
+  void readUserInput(std::atomic<bool>& run);
 };
