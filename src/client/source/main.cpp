@@ -1,8 +1,7 @@
 #include "client.hpp"
 
-StrEncoder encoder;
-Client client(encoder);
-
 int main() {
+  StrEncoder encoder;
+  Client client(encoder);
   client.session();
 }
