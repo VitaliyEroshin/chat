@@ -91,7 +91,6 @@ void Client::refreshMessages() {
       break;
     }
     --it;
-        
   }
 }
 
@@ -161,10 +160,14 @@ void Client::readServer(std::atomic<bool>& run) {
   while (run.load()) {
     std::string message = socket.read();
 
+    if (message.length() == 0) {
+      run.store(false);
+      return;
+    }
+
     Object obj = encoder.decode(message);
     if (obj.type == Object::Type::text) {
       std::string temp;
-
       // Temporary solution
       for (int i = 0; i < obj.message.size(); ++i) {
         temp.push_back(obj.message[i]);
