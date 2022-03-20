@@ -40,3 +40,5 @@ bin
 build
 cmake-build-debug
 
+# Other
+*.DS_Store
