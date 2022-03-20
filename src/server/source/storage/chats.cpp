@@ -1,14 +1,14 @@
 #include "storage.hpp"
 
-Storage::Chat::Chat(): id(0) {};
+RAMStorage::Chat::Chat(): id(0) {};
 
-Storage::Chat::Chat(chatid_t id): id(id) {};
+RAMStorage::Chat::Chat(chatid_t id): id(id) {};
 
-chatid_t Storage::generateChatId() {
+chatid_t RAMStorage::generateChatId() {
   return chats.size();
 }
 
-int Storage::createChat(userid_t creator) {
+int RAMStorage::createChat(userid_t creator) {
   if (!users.count(creator)) {
     return -1;
   }
@@ -18,7 +18,7 @@ int Storage::createChat(userid_t creator) {
   return id;
 }
 
-int Storage::inviteToChat(userid_t selfId, userid_t target, chatid_t chat) {
+int RAMStorage::inviteToChat(userid_t selfId, userid_t target, chatid_t chat) {
     if (!chats.count(chat)) {
       return -1;
     }
