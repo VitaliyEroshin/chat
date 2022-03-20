@@ -19,8 +19,7 @@ struct ObjectTree {
 class Client {
 private:
   bool setAddress(std::string ip, int port);
-  
-public:
+
   enum Status {
     offline, online, connecting, authentification, failed
   };
@@ -30,8 +29,6 @@ public:
   UserInterface ui;
   Encoder& encoder;
   ObjectTree data;
-
-  explicit Client(Encoder& encoder);
   
   void setupAddress();
   int connectToHost();
@@ -40,11 +37,14 @@ public:
   void refreshMessages();
   void sendText(const std::string& text);
 
-  int session();
   int connect();
   void showBackground(std::atomic<bool>& connecting);
   void listen();
 
   void readServer(std::atomic<bool>& run);
   void readUserInput(std::atomic<bool>& run);
+
+public:
+  explicit Client(Encoder& encoder);
+  int session();
 };
