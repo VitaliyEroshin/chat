@@ -91,7 +91,116 @@ void Client::refreshMessages() {
       break;
     }
     --it;
-        
+  }
+}
+
+int Client::session() {
+  if (connect() < 0) {
+    return -1;
+  }
+
+  if (auth() < 0) {
+    return -1;
+  }
+
+  initializeGUI();
+  listen();
+
+  return 0;
+}
+
+int Client::connect() {
+  setupAddress();
+  std::atomic<bool> connecting(true);
+  std::thread background(&Client::showBackground, this, std::ref(connecting));
+
+  if (connectToHost() < 0) {
+    cstd::sleep(2);
+    connecting.store(false);
+    cstd::usleep(500 * 1000);
+    status = Client::Status::failed;
+    ui.print({1, 1}, {1, 20}, "Connection failed");
+    cstd::sleep(2);
+  }
+
+  connecting.store(false);
+  background.join();
+  if (status == Client::Status::failed) {
+    return -1;
+  }
+
+  status = Client::Status::authentification;
+  ui.print({1, 1}, {1, 20}, "Connected!");
+  cstd::usleep(300 * 1000);
+  ui.clearWindow();
+  return 0;
+}
+
+void Client::showBackground(std::atomic<bool>& connecting) {
+  ui.clearWindow();
+  int i = 0;
+  while (connecting.load()) {
+    ui.print({1, 1}, {1, 20}, "Loading" + std::string(i++ + 1, '.'));
+    i %= 5;
+    cstd::usleep(300 * 1000);
+  }
+  ui.clearWindow();
+}
+
+void Client::listen() {
+  std::atomic<bool> run(true);
+  std::thread userInputThread(&Client::readUserInput, this, std::ref(run));
+  std::thread serverReadThread(&Client::readServer, this, std::ref(run));
+
+  userInputThread.join();
+  serverReadThread.join();
+}
+
+void Client::readServer(std::atomic<bool>& run) {
+  while (run.load()) {
+    std::string message = socket.read();
+
+    if (message.length() == 0) {
+      run.store(false);
+      return;
+    }
+
+    Object obj = encoder.decode(message);
+    if (obj.type == Object::Type::text) {
+      std::string temp;
+      // Temporary solution
+      for (int i = 0; i < obj.message.size(); ++i) {
+        temp.push_back(obj.message[i]);
+        if ((i + 1) % (ui.out.window.width - 8) == 0) {
+          data.insert(temp);
+          temp = "";
+        }
+      }
+      if (!temp.empty()) {
+        data.insert(temp);
+      }
+      // client.data.insert(obj.message);
+      refreshMessages();
+    }
+  }
+}
+
+void Client::readUserInput(std::atomic<bool>& run) {
+  while (run.load()) {
+    std::string command = ui.input({ui.out.window.height - 2, 4}, {1, ui.out.window.width - 8});
+
+    ui.print({ui.out.window.height - 2, 4}, {1, ui.out.window.width - 8}, "");
+    if (command == "/quit") {
+      run.store(false);
+      socket.~Socket();
+      return;
+    }
+    if (command.empty()) {
+      continue;
+    }
+
+    sendText(command);
+    refreshMessages();
   }
 }
 
