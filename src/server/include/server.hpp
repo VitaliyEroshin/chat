@@ -26,12 +26,13 @@ class Server {
   };
 
   Storage& storage;
-  Encoder encoder;
+  Encoder& encoder;
+
   friend bool operator<(const Connection& first, const Connection& second);
   friend bool operator==(const Connection& first, const Connection& second);
 
 public:
-  explicit Server(int port, Storage& storage);
+  explicit Server(int port, Storage& storage, Encoder& encoder);
 
   [[noreturn]] void loop();
   ~Server() = default;

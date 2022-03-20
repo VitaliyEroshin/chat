@@ -2,6 +2,8 @@
 
 int main() {
   RAMStorage storage;
-  Server server(8888, storage);
+  StrEncoder encoder;
+  Server server(8888, storage, encoder);
+
   server.loop();
 }
