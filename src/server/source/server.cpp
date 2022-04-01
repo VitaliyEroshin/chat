@@ -84,15 +84,16 @@ void Server::selectDescriptor() {
 
 void Server::parseQuery(const std::string& query, Connection& user) {
   Object obj = encoder.decode(query);
-  std::cout << "Received message from " << user.socket->descriptor << '\n';
-  std::cout << "  Message: " << query << '\n';
-  
   if (obj.type == Object::Type::text) {
     addMessage(obj, user);
     return;
   }
   if (obj.type == Object::Type::loginAttempt) {
     parseAuthData(obj, user);
+    return;
+  }
+  if (obj.type == Object::Type::command) {
+    parseCommand(obj, user);
     return;
   }
 }
@@ -116,9 +117,9 @@ void Server::parseAuthData(const Object& object, Connection& user) {
   int code = storage.getUser(login, password);
   
   if (code == -2) {
-      callback.ret = 2;
-      user.socket->send(encoder.encode(callback));
-      return;
+    callback.ret = 2;
+    user.socket->send(encoder.encode(callback));
+    return;
   }
   if (code == -1) {
     storage.addUser(login, password);
@@ -133,6 +134,67 @@ void Server::parseAuthData(const Object& object, Connection& user) {
   user.user = code;
 }
 
+void Server::parseCommand(const Object& object, Connection& user) {
+  std::stringstream ss;
+  ss << object.message;
+
+  std::string commandType;
+  ss >> commandType;
+
+  Object callback;
+  callback.type = Object::Type::text;
+  callback.id = 0;
+
+  if (commandType == "/addfriend") {
+    userid_t target;
+    ss >> target;
+    storage.addFriend(user.user, target);
+  } else if (commandType == "/myid") {
+    callback.message = "Your ID is: " + std::to_string(user.user);
+  } else if (commandType == "/chat") {
+    callback.message = "You are in chat with ID: " + std::to_string(storage.getChat(user.user));
+  } else if (commandType == "/makechat") {
+    chatid_t id = storage.createChat(user.user);
+    storage.setUserChat(user.user, id);
+    callback.message = "You have successfully created chat with ID: " + std::to_string(id);
+  } else if (commandType == "/invite") {
+    chatid_t currentChat = storage.getChat(user.user);
+    if (!currentChat) {
+      callback.message = "You cannot invite to the global chat";
+    } else {
+      userid_t target;
+      ss >> target;
+      storage.inviteToChat(user.user, target, currentChat);
+      callback.message = "You have invited " + storage.getUserReference(target).getNickname() 
+        + " to chat " + std::to_string(currentChat);
+    }
+  } else if (commandType == "/switchchat") {
+    chatid_t id;
+    ss >> id;
+    int code = storage.setUserChat(user.user, id);
+    if (code == -1) {
+      callback.message = "No chat found.";
+    } else if (code == -2) {
+      callback.message = "You are not a member of the chat";
+    } else {
+      callback.message = "You have succesfully switched the chat";
+    }
+  } else if (commandType == "/friends") {
+    const std::vector<userid_t>& friends = storage.getUserFriends(user.user);
+    callback.message = "Your friends are: ";
+    for (auto &usr : friends) {
+      callback.message += storage.getUserReference(usr).getNickname() + ", ";
+    }
+  } else if (commandType == "/chats") {
+    const std::vector<chatid_t>& userchats = storage.getUserChats(user.user);
+    callback.message += "Your available chats are: ";
+    for (auto &cht : userchats) {
+      callback.message += std::to_string(cht);
+    }
+  }
+  user.socket->send(encoder.encode(callback));
+}
+
 void Server::addMessage(Object object, Connection& user) {
   object.author = user.user;
   const User& usr = storage.getUserReference(user.user);
@@ -141,8 +203,9 @@ void Server::addMessage(Object object, Connection& user) {
     if (other == user) {
       continue;
     }
-
-    std::cout << "Trying to send to " << other.socket->descriptor << " - ";
+    if (storage.getChat(other.user) != storage.getChat(user.user)) {
+      continue;
+    }
 
     other.socket->send(encoder.encode(object));
   }

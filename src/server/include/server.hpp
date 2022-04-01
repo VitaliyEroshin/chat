@@ -5,6 +5,7 @@
 #include <iostream>
 #include <list>
 #include <unordered_set>
+#include <sstream>
 #include "socket.hpp"
 #include "storage.hpp"
 
@@ -48,5 +49,6 @@ private:
   static void removeConnection(const Connection& peer);
   void parseQuery(const std::string& query, Connection& user);
   void parseAuthData(const Object& object, Connection& user);
+  void parseCommand(const Object& object, Connection& user);
   void addMessage(Object object, Connection& user);
 };

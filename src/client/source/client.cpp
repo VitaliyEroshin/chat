@@ -206,6 +206,7 @@ void Client::readUserInput(std::atomic<bool>& run) {
     }
     if (command[0] == '/') {
       sendCommand(command);
+      continue;
     }
     if (command.empty()) {
       continue;

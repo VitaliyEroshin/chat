@@ -32,7 +32,7 @@ int RAMStorage::addUser(const login_t& login, const password_t& password) {
 }
 
 userid_t RAMStorage::generateUserId() {
-  return users.size();
+  return users.size() + 1;
 }
 
 const User& RAMStorage::getUserReference(userid_t id)  {
@@ -47,6 +47,10 @@ chatid_t RAMStorage::getChat(userid_t selfId) {
 }
 
 int RAMStorage::setUserChat(userid_t id, chatid_t chat) {
+  if (chat == 0) {
+    currentChat[id] = 0;
+    return 0;
+  }
   if (!chats.count(chat)) {
     return -1;
   }

@@ -102,7 +102,7 @@ Object StrEncoder::decode(const Encoder::bytes& bytes) {
     return obj;
   }
 
-  if (obj.type != Object::Type::loginAttempt) {
+  if (obj.type != Object::Type::loginAttempt && obj.type != Object::Type::command) {
     obj.id = fromBytes<objectid_t>(bytes.substr(ptr, sizeof(objectid_t)));
     ptr += sizeof(objectid_t);
   }
