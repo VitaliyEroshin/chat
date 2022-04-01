@@ -37,6 +37,7 @@ private:
   void initializeGUI();
   void refreshMessages();
   void sendText(const std::string& text);
+  void sendCommand(const std::string& text);
 
   int connect();
   void showBackground(std::atomic<bool>& connecting);

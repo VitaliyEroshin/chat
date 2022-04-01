@@ -77,6 +77,15 @@ void Client::sendText(const std::string& text) {
   socket.send(en);
 }
 
+void Client::sendCommand(const std::string& text) {
+  Object obj;
+  obj.message = text;
+  obj.type = Object::Type::command;
+  std::string en = encoder.encode(obj);
+  socket.send(en);
+}
+
+
 void Client::initializeGUI() {
   ui.clearWindow();
   ui.print({ui.out.window.height - 2, 2}, "> ");
@@ -194,6 +203,9 @@ void Client::readUserInput(std::atomic<bool>& run) {
       run.store(false);
       socket.~Socket();
       return;
+    }
+    if (command[0] == '/') {
+      sendCommand(command);
     }
     if (command.empty()) {
       continue;
