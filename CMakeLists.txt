@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 project (
     Chat
-    VERSION 1.2
+    VERSION 1.3
     LANGUAGES CXX 
 )
 
