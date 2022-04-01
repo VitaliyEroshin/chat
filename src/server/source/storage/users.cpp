@@ -2,7 +2,7 @@
 #include "entities.hpp"
 
 User::User(userid_t id, const login_t& login, const password_t& password)
-  : id(id), login(login), password(password) {};
+  : id(id), login(login), password(password), profile({login}) {};
 
 User::User()
   : id(0), login(""), password("") {};

@@ -15,6 +15,8 @@ public:
   virtual int createChat(userid_t creator) = 0;
   virtual int inviteToChat(userid_t selfId, userid_t target, chatid_t chat) = 0;
   virtual chatid_t getChat(userid_t selfId) = 0;
+  
+  virtual const User& getUserReference(userid_t id) = 0;
 };
 
 class RAMStorage: public Storage {
@@ -41,4 +43,8 @@ public:
   int createChat(userid_t creator) override;
   int inviteToChat(userid_t selfId, userid_t target, chatid_t chat) override;
   chatid_t getChat(userid_t selfId) override { return 0; }
+
+  const User& getUserReference(userid_t id) override {
+    return users[id];
+  }
 };

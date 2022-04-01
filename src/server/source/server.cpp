@@ -116,7 +116,6 @@ void Server::parseAuthData(const Object& object, Connection& user) {
   int code = storage.getUser(login, password);
   
   if (code == -2) {
-      // wrong password
       callback.ret = 2;
       user.socket->send(encoder.encode(callback));
       return;
@@ -136,6 +135,8 @@ void Server::parseAuthData(const Object& object, Connection& user) {
 
 void Server::addMessage(Object object, Connection& user) {
   object.author = user.user;
+  const User& usr = storage.getUserReference(user.user);
+  object.message = "[" + usr.getNickname() + "] " + object.message;
   for (auto &other : connections) {
     if (other == user) {
       continue;
