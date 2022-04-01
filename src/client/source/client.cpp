@@ -208,8 +208,8 @@ void ObjectTree::insert(const std::string& text) {
   Object obj;
   obj.message = text;
   if (objects.empty()) {
+    objects.push_back(obj);
     head = objects.begin();
-    objects.insert(head, obj);
     return;
   }
   objects.insert(head, obj);
