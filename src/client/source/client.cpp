@@ -179,7 +179,6 @@ void Client::readServer(std::atomic<bool>& run) {
       if (!temp.empty()) {
         data.insert(temp);
       }
-      // client.data.insert(obj.message);
       refreshMessages();
     }
   }
@@ -191,6 +190,7 @@ void Client::readUserInput(std::atomic<bool>& run) {
 
     ui.print({ui.out.window.height - 2, 4}, {1, ui.out.window.width - 8}, "");
     if (command == "/quit") {
+      ui.~UserInterface();
       run.store(false);
       socket.~Socket();
       return;
@@ -207,10 +207,12 @@ void Client::readUserInput(std::atomic<bool>& run) {
 void ObjectTree::insert(const std::string& text) {
   Object obj;
   obj.message = text;
-  if (objects.empty()) {
-    objects.push_back(obj);
-    head = objects.begin();
-    return;
-  }
   objects.insert(head, obj);
+}
+
+ObjectTree::ObjectTree() {
+  Object empty;
+  empty.message = "";
+  objects.push_back(empty);
+  head = objects.begin();
 }

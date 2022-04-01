@@ -14,6 +14,7 @@ struct ObjectTree {
   std::list<Object>::iterator head;
 
   void insert(const std::string& text);
+  ObjectTree();
 };
 
 class Client {
