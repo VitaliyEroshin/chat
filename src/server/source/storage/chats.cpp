@@ -5,7 +5,7 @@ RAMStorage::Chat::Chat(): id(0) {};
 RAMStorage::Chat::Chat(chatid_t id): id(id) {};
 
 chatid_t RAMStorage::generateChatId() {
-  return chats.size();
+  return chats.size() + 1;
 }
 
 int RAMStorage::createChat(userid_t creator) {
