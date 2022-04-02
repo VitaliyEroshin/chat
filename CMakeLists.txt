@@ -11,6 +11,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 include_directories(${PROJECT_SOURCE_DIR}/src/include)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/objects)
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/filesystem)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/socket)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/server)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/client)

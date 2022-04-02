@@ -1,0 +1,5 @@
+ 
+    This is simple CLI chat created by V from scratch on C++
+
+    author: https://github.com/VitaliyEroshin
+ 

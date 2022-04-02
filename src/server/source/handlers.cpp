@@ -9,6 +9,8 @@ void Server::initHandlers() {
     addHandler("/switchchat", &Server::switchChatHandler);
     addHandler("/friends", &Server::getFriendsHandler);
     addHandler("/chats", &Server::getChatsHandler);
+    addHandler("/help", &Server::getHelpHandler);
+    addHandler("/about", &Server::getAboutHandler);
     // TODO: help
 }
 
@@ -97,4 +99,12 @@ void Server::getChatsHandler(Object& callback, Connection& user, std::stringstre
       callback.message += ", ";
     }
   }
+}
+
+void Server::getHelpHandler(Object& callback, Connection& user, std::stringstream& ss) {
+  callback.message = fs::loadContent("../content/help.txt");
+}
+
+void Server::getAboutHandler(Object& callback, Connection& user, std::stringstream& ss) {
+  callback.message = fs::loadContent("../content/about.txt");
 }

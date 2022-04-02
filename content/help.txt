@@ -1,0 +1,15 @@
+ 
+List of available commands:
+    /addfriend {id}     add user to your friendlist by id.
+    /myid               show your account id.
+    /chat               view your current chat id.
+    /makechat           make a new chat.
+    /invite {id}        invite user to the chat you are in.
+    /switchchat {id}    switch your chat by chatid.
+    /friends            view your friendlist.
+    /chats              view available chats.
+
+    /about              view app description.
+
+    /quit               leave the app.
+ 

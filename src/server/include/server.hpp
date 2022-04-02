@@ -9,6 +9,7 @@
 #include <functional>
 #include "socket.hpp"
 #include "storage.hpp"
+#include "filesystem.hpp"
 
 class Server {
   struct Connection {
@@ -68,4 +69,6 @@ private:
   void switchChatHandler(Object& callback, Connection& user, std::stringstream& ss);
   void getFriendsHandler(Object& callback, Connection& user, std::stringstream& ss);
   void getChatsHandler(Object& callback, Connection& user, std::stringstream& ss);
+  void getHelpHandler(Object& callback, Connection& user, std::stringstream& ss);
+  void getAboutHandler(Object& callback, Connection& user, std::stringstream& ss);
 };
