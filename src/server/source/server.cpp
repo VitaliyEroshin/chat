@@ -24,6 +24,7 @@ Server::Server(int port, Storage& storage, Encoder& encoder)
     std::cout << "Listen failed." << std::endl;
 
   std::cout << "Server constructed\n";
+  initHandlers();
 }
 
 void Server::acceptConnection() {
@@ -84,15 +85,16 @@ void Server::selectDescriptor() {
 
 void Server::parseQuery(const std::string& query, Connection& user) {
   Object obj = encoder.decode(query);
-  std::cout << "Received message from " << user.socket->descriptor << '\n';
-  std::cout << "  Message: " << query << '\n';
-  
   if (obj.type == Object::Type::text) {
     addMessage(obj, user);
     return;
   }
   if (obj.type == Object::Type::loginAttempt) {
     parseAuthData(obj, user);
+    return;
+  }
+  if (obj.type == Object::Type::command) {
+    parseCommand(obj, user);
     return;
   }
 }
@@ -116,10 +118,9 @@ void Server::parseAuthData(const Object& object, Connection& user) {
   int code = storage.getUser(login, password);
   
   if (code == -2) {
-      // wrong password
-      callback.ret = 2;
-      user.socket->send(encoder.encode(callback));
-      return;
+    callback.ret = 2;
+    user.socket->send(encoder.encode(callback));
+    return;
   }
   if (code == -1) {
     storage.addUser(login, password);
@@ -134,14 +135,35 @@ void Server::parseAuthData(const Object& object, Connection& user) {
   user.user = code;
 }
 
+void Server::parseCommand(const Object& object, Connection& user) {
+  std::stringstream ss;
+  ss << object.message;
+
+  std::string commandType;
+  ss >> commandType;
+
+  Object callback;
+  callback.type = Object::Type::text;
+  callback.id = 0;
+
+  if (handlers.count(commandType)) {
+    handlers[commandType](callback, user, ss);
+  }
+
+  user.socket->send(encoder.encode(callback));
+}
+
 void Server::addMessage(Object object, Connection& user) {
   object.author = user.user;
+  const User& usr = storage.getUserReference(user.user);
+  object.message = "[" + usr.getNickname() + "] " + object.message;
   for (auto &other : connections) {
     if (other == user) {
       continue;
     }
-
-    std::cout << "Trying to send to " << other.socket->descriptor << " - ";
+    if (storage.getChat(other.user) != storage.getChat(user.user)) {
+      continue;
+    }
 
     other.socket->send(encoder.encode(object));
   }

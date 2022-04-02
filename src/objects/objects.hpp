@@ -8,6 +8,7 @@ struct Object {
     text = 1,
     loginAttempt = 2,
     returnCode = 3,
+    command = 4,
   };
 
   objectid_t id;

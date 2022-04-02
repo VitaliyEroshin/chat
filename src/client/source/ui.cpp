@@ -43,6 +43,11 @@ output_t UserInterface::input(
   while (!UserInterface::Keyboard::isEnter(c)) {
     c = getchar();
     
+    if (UserInterface::Keyboard::isTab(c)) {
+      processInputTab(pivot, end);
+      continue;
+    }
+
     if (UserInterface::Keyboard::isArrow(c)) {
       processInputArrow(pivot, end);
       continue;
@@ -90,6 +95,10 @@ output_t UserInterface::askForm(Cursor::Position pivot, Cursor::Position size, c
   print(pivot, text);
   pivot.y += text.size();
   return input(pivot, size);
+}
+
+void UserInterface::processInputTab(Cursor::Position pivot, Cursor::Position end) {
+  
 }
 
 void UserInterface::processInputArrow(Cursor::Position pivot, Cursor::Position end) {
@@ -155,7 +164,7 @@ void UserInterface::processInputBackspace(Cursor::Position pivot, Cursor::Positi
 }
 
 void UserInterface::clearWindow() {
-  print({0, 0}, {getWindowHeight() - 1, getWindowWidth() - 1}, "");
+  print({0, 0}, {getWindowHeight(), getWindowWidth() - 1}, "");
 }
 
 void UserInterface::Input::Buffer::moveLeft() {

@@ -77,6 +77,15 @@ void Client::sendText(const std::string& text) {
   socket.send(en);
 }
 
+void Client::sendCommand(const std::string& text) {
+  Object obj;
+  obj.message = text;
+  obj.type = Object::Type::command;
+  std::string en = encoder.encode(obj);
+  socket.send(en);
+}
+
+
 void Client::initializeGUI() {
   ui.clearWindow();
   ui.print({ui.out.window.height - 2, 2}, "> ");
@@ -147,16 +156,46 @@ void Client::showBackground(std::atomic<bool>& connecting) {
   ui.clearWindow();
 }
 
+void Client::refreshOutput(std::atomic<bool>& update, std::atomic<bool>& run) {
+  while (run.load()) {
+    if (update.load()) {
+      refreshMessages();
+      update.store(false);
+    }
+    cstd::usleep(100 * 1000);
+  }
+}
+
 void Client::listen() {
   std::atomic<bool> run(true);
-  std::thread userInputThread(&Client::readUserInput, this, std::ref(run));
-  std::thread serverReadThread(&Client::readServer, this, std::ref(run));
+  std::atomic<bool> update(false);
+
+  std::thread userInputThread(&Client::readUserInput, this, std::ref(update), std::ref(run));
+  std::thread serverReadThread(&Client::readServer, this, std::ref(update), std::ref(run));
+  std::thread refreshOutputThread(&Client::refreshOutput, this, std::ref(update), std::ref(run));
 
   userInputThread.join();
   serverReadThread.join();
+  refreshOutputThread.join();
 }
 
-void Client::readServer(std::atomic<bool>& run) {
+void Client::parseMessage(const std::string& message) {
+  std::string temp;
+  for (auto &c : message) {
+    if (c == '\n' || temp.size() == ui.out.window.width - 8) {
+      data.insert(temp);
+      temp.clear();
+    }
+    if (c != '\n') {
+      temp.push_back(c);
+    }
+  }
+  if (!temp.empty()) {
+    data.insert(temp);
+  }
+}
+
+void Client::readServer(std::atomic<bool>& update, std::atomic<bool>& run) {
   while (run.load()) {
     std::string message = socket.read();
 
@@ -167,50 +206,52 @@ void Client::readServer(std::atomic<bool>& run) {
 
     Object obj = encoder.decode(message);
     if (obj.type == Object::Type::text) {
-      std::string temp;
-      // Temporary solution
-      for (int i = 0; i < obj.message.size(); ++i) {
-        temp.push_back(obj.message[i]);
-        if ((i + 1) % (ui.out.window.width - 8) == 0) {
-          data.insert(temp);
-          temp = "";
-        }
-      }
-      if (!temp.empty()) {
-        data.insert(temp);
-      }
-      // client.data.insert(obj.message);
-      refreshMessages();
+      parseMessage(obj.message);
+      update.store(true);
+      // refreshMessages();
     }
   }
 }
 
-void Client::readUserInput(std::atomic<bool>& run) {
+void Client::readUserInput(std::atomic<bool>& update, std::atomic<bool>& run) {
   while (run.load()) {
     std::string command = ui.input({ui.out.window.height - 2, 4}, {1, ui.out.window.width - 8});
 
-    ui.print({ui.out.window.height - 2, 4}, {1, ui.out.window.width - 8}, "");
+    ui.print({ui.out.window.height - 2, 2}, {1, ui.out.window.width - 8}, "> ");
     if (command == "/quit") {
+      ui.~UserInterface();
       run.store(false);
       socket.~Socket();
       return;
+    }
+
+    if (command == "/refresh") {
+      initializeGUI();
+    }
+
+    if (command[0] == '/') {
+      sendCommand(command);
+      continue;
     }
     if (command.empty()) {
       continue;
     }
 
     sendText(command);
-    refreshMessages();
+    update.store(true);
+    // refreshMessages();
   }
 }
 
 void ObjectTree::insert(const std::string& text) {
   Object obj;
   obj.message = text;
-  if (objects.empty()) {
-    objects.push_back(obj);
-    head = objects.begin();
-    return;
-  }
   objects.insert(head, obj);
+}
+
+ObjectTree::ObjectTree() {
+  Object empty;
+  empty.message = "";
+  objects.push_back(empty);
+  head = objects.begin();
 }

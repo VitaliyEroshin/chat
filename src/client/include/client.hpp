@@ -14,6 +14,7 @@ struct ObjectTree {
   std::list<Object>::iterator head;
 
   void insert(const std::string& text);
+  ObjectTree();
 };
 
 class Client {
@@ -36,13 +37,17 @@ private:
   void initializeGUI();
   void refreshMessages();
   void sendText(const std::string& text);
+  void sendCommand(const std::string& text);
 
   int connect();
   void showBackground(std::atomic<bool>& connecting);
   void listen();
 
-  void readServer(std::atomic<bool>& run);
-  void readUserInput(std::atomic<bool>& run);
+  void parseMessage(const std::string& message);
+  
+  void readServer(std::atomic<bool>& update, std::atomic<bool>& run);
+  void readUserInput(std::atomic<bool>& update, std::atomic<bool>& run);
+  void refreshOutput(std::atomic<bool>& update, std::atomic<bool>& run);
 
 public:
   explicit Client(Encoder& encoder);

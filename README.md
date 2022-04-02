@@ -30,14 +30,15 @@ make
 <img width="213" alt="Auth" src="https://user-images.githubusercontent.com/36928556/159168905-d3bc159c-6adb-45ea-9e43-594fb9f948a5.png">
 <img width="234" alt="Chatting" src="https://user-images.githubusercontent.com/36928556/159168933-9ee8445f-c100-4f3c-8449-1051a8eae103.png">
 
-5) ***Have fun!*** 🥳
+5) To view available commands, type ```/help``` command in chat.
+6) ***Have fun!*** 🥳
 
 ## Roadmap
 **Non GUI Client**:
 - Registration & authorization (basic)  (**X**)
 - Profile editing (nickname, status)
-- Chat creation, user invitation
-- Switching between available chats
+- Chat creation, user invitation        (**X**)
+- Switching between available chats     (**X**)
 - Text messages                         (**X**)
 - Threads from existing messages
 - Message history

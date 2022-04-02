@@ -7,9 +7,11 @@ add_executable(server ${SERVER_SOURCES} ${STORAGE_SOURCES})
 target_include_directories(server PUBLIC ${SERVER_DIR}/include/)
 target_include_directories(server PUBLIC ${SOCKET_LIB_DIR}/include/)
 target_include_directories(server PUBLIC ${OBJECTS_LIB_DIR})
+target_include_directories(server PUBLIC ${FILESYSTEM_LIB_DIR})
 
 target_link_libraries(server PRIVATE sockets_lib)
 target_link_libraries(server PRIVATE objects_lib)
+target_link_libraries(server PRIVATE filesystem_lib)
 
 set_target_properties(server
     PROPERTIES
