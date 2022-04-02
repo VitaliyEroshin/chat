@@ -156,13 +156,27 @@ void Client::showBackground(std::atomic<bool>& connecting) {
   ui.clearWindow();
 }
 
+void Client::refreshOutput(std::atomic<bool>& update, std::atomic<bool>& run) {
+  while (run.load()) {
+    if (update.load()) {
+      refreshMessages();
+      update.store(false);
+    }
+    cstd::usleep(100 * 1000);
+  }
+}
+
 void Client::listen() {
   std::atomic<bool> run(true);
-  std::thread userInputThread(&Client::readUserInput, this, std::ref(run));
-  std::thread serverReadThread(&Client::readServer, this, std::ref(run));
+  std::atomic<bool> update(false);
+
+  std::thread userInputThread(&Client::readUserInput, this, std::ref(update), std::ref(run));
+  std::thread serverReadThread(&Client::readServer, this, std::ref(update), std::ref(run));
+  std::thread refreshOutputThread(&Client::refreshOutput, this, std::ref(update), std::ref(run));
 
   userInputThread.join();
   serverReadThread.join();
+  refreshOutputThread.join();
 }
 
 void Client::parseMessage(const std::string& message) {
@@ -181,7 +195,7 @@ void Client::parseMessage(const std::string& message) {
   }
 }
 
-void Client::readServer(std::atomic<bool>& run) {
+void Client::readServer(std::atomic<bool>& update, std::atomic<bool>& run) {
   while (run.load()) {
     std::string message = socket.read();
 
@@ -193,22 +207,28 @@ void Client::readServer(std::atomic<bool>& run) {
     Object obj = encoder.decode(message);
     if (obj.type == Object::Type::text) {
       parseMessage(obj.message);
-      refreshMessages();
+      update.store(true);
+      // refreshMessages();
     }
   }
 }
 
-void Client::readUserInput(std::atomic<bool>& run) {
+void Client::readUserInput(std::atomic<bool>& update, std::atomic<bool>& run) {
   while (run.load()) {
     std::string command = ui.input({ui.out.window.height - 2, 4}, {1, ui.out.window.width - 8});
 
-    ui.print({ui.out.window.height - 2, 4}, {1, ui.out.window.width - 8}, "");
+    ui.print({ui.out.window.height - 2, 2}, {1, ui.out.window.width - 8}, "> ");
     if (command == "/quit") {
       ui.~UserInterface();
       run.store(false);
       socket.~Socket();
       return;
     }
+
+    if (command == "/refresh") {
+      initializeGUI();
+    }
+
     if (command[0] == '/') {
       sendCommand(command);
       continue;
@@ -218,7 +238,8 @@ void Client::readUserInput(std::atomic<bool>& run) {
     }
 
     sendText(command);
-    refreshMessages();
+    update.store(true);
+    // refreshMessages();
   }
 }
 

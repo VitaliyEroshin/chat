@@ -60,6 +60,11 @@ char Socket::buffer[bufferSize];
 
 std::string Socket::read() const {
   int bytes = cstd::read(descriptor, buffer, bufferSize);
+  
+  if (bytes < 0 || bytes > bufferSize) {
+    return "";
+  }
+  
   std::string s;
   for (size_t i = 0; i < bytes; ++i) {
     s.push_back(buffer[i]);

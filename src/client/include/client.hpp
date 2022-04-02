@@ -44,8 +44,10 @@ private:
   void listen();
 
   void parseMessage(const std::string& message);
-  void readServer(std::atomic<bool>& run);
-  void readUserInput(std::atomic<bool>& run);
+  
+  void readServer(std::atomic<bool>& update, std::atomic<bool>& run);
+  void readUserInput(std::atomic<bool>& update, std::atomic<bool>& run);
+  void refreshOutput(std::atomic<bool>& update, std::atomic<bool>& run);
 
 public:
   explicit Client(Encoder& encoder);

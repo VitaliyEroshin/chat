@@ -164,7 +164,7 @@ void UserInterface::processInputBackspace(Cursor::Position pivot, Cursor::Positi
 }
 
 void UserInterface::clearWindow() {
-  print({0, 0}, {getWindowHeight() - 1, getWindowWidth() - 1}, "");
+  print({0, 0}, {getWindowHeight(), getWindowWidth() - 1}, "");
 }
 
 void UserInterface::Input::Buffer::moveLeft() {
