@@ -19,4 +19,8 @@ public:
   bool checkPassword(const password_t& pass) {
     return pass == password;
   }
+
+  std::string getNickname() const {
+    return profile.nickname;
+  }
 };

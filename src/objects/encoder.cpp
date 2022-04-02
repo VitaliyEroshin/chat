@@ -13,6 +13,9 @@ char StrEncoder::getTypeId(const Object& object) {
     return 3;
   }
 
+  if (object.type == Object::Type::command) {
+    return 4;
+  }
   return 0;
 }
 
@@ -27,6 +30,10 @@ Object::Type StrEncoder::fromTypeId(char id) {
 
   if (id == 3) {
     return Object::Type::returnCode;
+  }
+
+  if (id == 4) {
+    return Object::Type::command;
   }
 
   return Object::Type::unknown;
@@ -66,7 +73,7 @@ Encoder::bytes StrEncoder::encode(const Object& object) {
   std::string s = "";
   s.push_back(getTypeId(object));
 
-  if (object.type == Object::Type::loginAttempt) {
+  if (object.type == Object::Type::loginAttempt || object.type == Object::Type::command) {
     s += object.message;
     return s;
   }
@@ -95,7 +102,7 @@ Object StrEncoder::decode(const Encoder::bytes& bytes) {
     return obj;
   }
 
-  if (obj.type != Object::Type::loginAttempt) {
+  if (obj.type != Object::Type::loginAttempt && obj.type != Object::Type::command) {
     obj.id = fromBytes<objectid_t>(bytes.substr(ptr, sizeof(objectid_t)));
     ptr += sizeof(objectid_t);
   }

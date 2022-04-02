@@ -77,6 +77,15 @@ void Client::sendText(const std::string& text) {
   socket.send(en);
 }
 
+void Client::sendCommand(const std::string& text) {
+  Object obj;
+  obj.message = text;
+  obj.type = Object::Type::command;
+  std::string en = encoder.encode(obj);
+  socket.send(en);
+}
+
+
 void Client::initializeGUI() {
   ui.clearWindow();
   ui.print({ui.out.window.height - 2, 2}, "> ");
@@ -156,6 +165,22 @@ void Client::listen() {
   serverReadThread.join();
 }
 
+void Client::parseMessage(const std::string& message) {
+  std::string temp;
+  for (auto &c : message) {
+    if (c == '\n' || temp.size() == ui.out.window.width - 8) {
+      data.insert(temp);
+      temp.clear();
+    }
+    if (c != '\n') {
+      temp.push_back(c);
+    }
+  }
+  if (!temp.empty()) {
+    data.insert(temp);
+  }
+}
+
 void Client::readServer(std::atomic<bool>& run) {
   while (run.load()) {
     std::string message = socket.read();
@@ -167,18 +192,7 @@ void Client::readServer(std::atomic<bool>& run) {
 
     Object obj = encoder.decode(message);
     if (obj.type == Object::Type::text) {
-      std::string temp;
-      // Temporary solution
-      for (int i = 0; i < obj.message.size(); ++i) {
-        temp.push_back(obj.message[i]);
-        if ((i + 1) % (ui.out.window.width - 8) == 0) {
-          data.insert(temp);
-          temp = "";
-        }
-      }
-      if (!temp.empty()) {
-        data.insert(temp);
-      }
+      parseMessage(obj.message);
       refreshMessages();
     }
   }
@@ -194,6 +208,10 @@ void Client::readUserInput(std::atomic<bool>& run) {
       run.store(false);
       socket.~Socket();
       return;
+    }
+    if (command[0] == '/') {
+      sendCommand(command);
+      continue;
     }
     if (command.empty()) {
       continue;

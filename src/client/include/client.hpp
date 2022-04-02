@@ -37,11 +37,13 @@ private:
   void initializeGUI();
   void refreshMessages();
   void sendText(const std::string& text);
+  void sendCommand(const std::string& text);
 
   int connect();
   void showBackground(std::atomic<bool>& connecting);
   void listen();
 
+  void parseMessage(const std::string& message);
   void readServer(std::atomic<bool>& run);
   void readUserInput(std::atomic<bool>& run);
 
