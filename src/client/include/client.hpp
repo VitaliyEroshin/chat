@@ -43,6 +43,7 @@ private:
   void showBackground(std::atomic<bool>& connecting);
   void listen();
 
+  void parseMessage(const std::string& message);
   void readServer(std::atomic<bool>& run);
   void readUserInput(std::atomic<bool>& run);
 

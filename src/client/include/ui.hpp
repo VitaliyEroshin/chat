@@ -48,6 +48,7 @@ public:
   };
 
   struct Keyboard {
+    static bool isTab(char x) { return x == 9; }
     static bool isEnter(char x) { return x == 13; }
     static bool isBackspace(char x) { return x == 127; }
     static bool isArrow(char x) { return x == 27; }
@@ -95,6 +96,7 @@ public:
   output_t askForm(Cursor::Position pivot, Cursor::Position size, const output_t& text);
 
 private:
+  void processInputTab(Cursor::Position pivot, Cursor::Position end);
   void processInputArrow(Cursor::Position pivot, Cursor::Position end);
   void processInputBackspace(Cursor::Position pivot, Cursor::Position end, Cursor::Position size);
   void refreshInputBuffer(Cursor::Position pivot, Cursor::Position size);
