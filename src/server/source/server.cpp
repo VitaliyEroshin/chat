@@ -24,6 +24,7 @@ Server::Server(int port, Storage& storage, Encoder& encoder)
     std::cout << "Listen failed." << std::endl;
 
   std::cout << "Server constructed\n";
+  initHandlers();
 }
 
 void Server::acceptConnection() {
@@ -145,53 +146,10 @@ void Server::parseCommand(const Object& object, Connection& user) {
   callback.type = Object::Type::text;
   callback.id = 0;
 
-  if (commandType == "/addfriend") {
-    userid_t target;
-    ss >> target;
-    storage.addFriend(user.user, target);
-  } else if (commandType == "/myid") {
-    callback.message = "Your ID is: " + std::to_string(user.user);
-  } else if (commandType == "/chat") {
-    callback.message = "You are in chat with ID: " + std::to_string(storage.getChat(user.user));
-  } else if (commandType == "/makechat") {
-    chatid_t id = storage.createChat(user.user);
-    storage.setUserChat(user.user, id);
-    callback.message = "You have successfully created chat with ID: " + std::to_string(id);
-  } else if (commandType == "/invite") {
-    chatid_t currentChat = storage.getChat(user.user);
-    if (!currentChat) {
-      callback.message = "You cannot invite to the global chat";
-    } else {
-      userid_t target;
-      ss >> target;
-      storage.inviteToChat(user.user, target, currentChat);
-      callback.message = "You have invited " + storage.getUserReference(target).getNickname() 
-        + " to chat " + std::to_string(currentChat);
-    }
-  } else if (commandType == "/switchchat") {
-    chatid_t id;
-    ss >> id;
-    int code = storage.setUserChat(user.user, id);
-    if (code == -1) {
-      callback.message = "No chat found.";
-    } else if (code == -2) {
-      callback.message = "You are not a member of the chat";
-    } else {
-      callback.message = "You have succesfully switched the chat";
-    }
-  } else if (commandType == "/friends") {
-    const std::vector<userid_t>& friends = storage.getUserFriends(user.user);
-    callback.message = "Your friends are: ";
-    for (auto &usr : friends) {
-      callback.message += storage.getUserReference(usr).getNickname() + ", ";
-    }
-  } else if (commandType == "/chats") {
-    const std::vector<chatid_t>& userchats = storage.getUserChats(user.user);
-    callback.message += "Your available chats are: ";
-    for (auto &cht : userchats) {
-      callback.message += std::to_string(cht);
-    }
+  if (handlers.count(commandType)) {
+    handlers[commandType](callback, user, ss);
   }
+
   user.socket->send(encoder.encode(callback));
 }
 
