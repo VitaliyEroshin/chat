@@ -8,6 +8,8 @@
 #include "socket.hpp"
 #include "encoder.hpp"
 #include "ui.hpp"
+#include "filesystem.hpp"
+#include "logger.hpp"
 
 struct ObjectTree {
   std::list<Object> objects;
@@ -30,6 +32,7 @@ private:
   UserInterface ui;
   Encoder& encoder;
   ObjectTree data;
+  fs::Config& config;
   
   void setupAddress();
   int connectToHost();
@@ -50,6 +53,6 @@ private:
   void refreshOutput(std::atomic<bool>& update, std::atomic<bool>& run);
 
 public:
-  explicit Client(Encoder& encoder);
+  explicit Client(Encoder& encoder, fs::Config& config);
   int session();
 };
