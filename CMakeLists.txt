@@ -6,25 +6,23 @@ project (
     LANGUAGES CXX 
 )
 
-if (TEST)
-    message("RUNNING IN TESTING MODE")
-    find_package(GTest REQUIRED)
-    include_directories(${GTEST_INCLUDE_DIRS})
-endif (TEST)
-
 set(CMAKE_CXX_STANDARD 17)
+
+option(TEST "Is in testing mode" off)
 
 include_directories(${PROJECT_SOURCE_DIR}/src/include)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/objects)
-add_subdirectory(${PROJECT_SOURCE_DIR}/src/filesystem)
-add_subdirectory(${PROJECT_SOURCE_DIR}/src/socket)
-add_subdirectory(${PROJECT_SOURCE_DIR}/src/server)
-add_subdirectory(${PROJECT_SOURCE_DIR}/src/client)
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/logger)
 
 if (TEST)
-    add_subdirectory(${PROJECT_SOURCE_DIR}/tests/encoder)
-
-    enable_testing()
-    
-    add_test(encoder_test ${PROJECT_SOURCE_DIR}/tests/bin/encoder_test)
+    message("Running test mode")
+    find_package(GTest REQUIRED)
+    include_directories(${GTEST_INCLUDE_DIRS})
+    add_subdirectory(${PROJECT_SOURCE_DIR}/tests)
+else(TEST)
+    message("Running normal mode")
+    add_subdirectory(${PROJECT_SOURCE_DIR}/src/filesystem)
+    add_subdirectory(${PROJECT_SOURCE_DIR}/src/socket)
+    add_subdirectory(${PROJECT_SOURCE_DIR}/src/server)
+    add_subdirectory(${PROJECT_SOURCE_DIR}/src/client)
 endif (TEST)
