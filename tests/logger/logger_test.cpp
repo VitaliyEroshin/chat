@@ -39,6 +39,21 @@ TEST(logger, multipleOstreams) {
     ASSERT_EQ(s3.str(), answer.str());
 }
 
+TEST(logger, endlHandling) {
+  std::stringstream s1, s2, s3;
+
+    std::stringstream answer;
+    
+    Logger log = {&s1, &s2, &s3};
+    
+    log << std::endl;
+    answer << std::endl;
+
+    ASSERT_EQ(s1.str(), answer.str());
+    ASSERT_EQ(s2.str(), answer.str());
+    ASSERT_EQ(s3.str(), answer.str());
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
