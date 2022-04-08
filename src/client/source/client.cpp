@@ -155,7 +155,7 @@ void Client::showBackground(std::atomic<bool>& connecting) {
   while (connecting.load()) {
     ui.print({1, 1}, {1, 20}, "Loading" + std::string(i++ + 1, '.'));
     i %= 5;
-    cstd::usleep(300 * 1000);
+    cstd::usleep(config.get<int>("loadingBackgroundSpeed") * 1000);
   }
   ui.clearWindow();
 }
@@ -166,7 +166,7 @@ void Client::refreshOutput(std::atomic<bool>& update, std::atomic<bool>& run) {
       refreshMessages();
       update.store(false);
     }
-    cstd::usleep(100 * 1000);
+    cstd::usleep(config.get<int>("refreshOutputDelay") * 1000);
   }
 }
 
@@ -212,7 +212,6 @@ void Client::readServer(std::atomic<bool>& update, std::atomic<bool>& run) {
     if (obj.type == Object::Type::text) {
       parseMessage(obj.message);
       update.store(true);
-      // refreshMessages();
     }
   }
 }
@@ -243,7 +242,6 @@ void Client::readUserInput(std::atomic<bool>& update, std::atomic<bool>& run) {
 
     sendText(command);
     update.store(true);
-    // refreshMessages();
   }
 }
 
