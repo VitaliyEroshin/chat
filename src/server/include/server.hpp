@@ -10,6 +10,7 @@
 #include "socket.hpp"
 #include "storage.hpp"
 #include "filesystem.hpp"
+#include "logger.hpp"
 
 class Server {
   struct Connection {
@@ -30,12 +31,13 @@ class Server {
 
   Storage& storage;
   Encoder& encoder;
+  Logger& log;
 
   friend bool operator<(const Connection& first, const Connection& second);
   friend bool operator==(const Connection& first, const Connection& second);
 
 public:
-  explicit Server(int port, Storage& storage, Encoder& encoder);
+  explicit Server(int port, Storage& storage, Encoder& encoder, Logger& log);
 
   [[noreturn]] void loop();
   ~Server() = default;
@@ -49,7 +51,7 @@ private:
   DescriptorSet readset{};
   void acceptConnection();
   void selectDescriptor();
-  static void removeConnection(const Connection& peer);
+  void removeConnection(const Connection& peer);
   void parseQuery(const std::string& query, Connection& user);
   void parseAuthData(const Object& object, Connection& user);
   void parseCommand(const Object& object, Connection& user);

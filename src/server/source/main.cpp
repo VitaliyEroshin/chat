@@ -3,7 +3,8 @@
 int main() {
   RAMStorage storage;
   StrEncoder encoder;
-  Server server(8888, storage, encoder);
+  Logger log = {&std::cout};
+  Server server(8888, storage, encoder, log);
 
   server.loop();
 }

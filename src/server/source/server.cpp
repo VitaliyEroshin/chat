@@ -12,35 +12,38 @@ Server::Connection::Connection(Socket* socket)
   : socket(socket), status(unauthorized) {};
 
 
-Server::Server(int port, Storage& storage, Encoder& encoder)
-  : socket(Socket(port)), storage(storage), encoder(encoder) {
+Server::Server(int port, Storage& storage, Encoder& encoder, Logger& log)
+    : socket(Socket(port)), 
+      storage(storage), 
+      encoder(encoder),
+      log(log)
+{
   if (socket.setSocketOption(SO_REUSEADDR, 1) != 0)
-    std::cout << "Socket option setting failed." << std::endl;
+    log << "Socket option setting failed." << std::endl;
 
   if (socket.bind() != 0)
-    std::cout << "Binding failed." << std::endl;
+    log << "Binding failed." << std::endl;
 
   if (socket.listen(3) != 0)
-    std::cout << "Listen failed." << std::endl;
+    log << "Listen failed." << std::endl;
 
-  std::cout << "Server constructed\n";
+  log << "Server constructed\n";
   initHandlers();
 }
 
 void Server::acceptConnection() {
   auto* new_socket = new Socket(socket.accept());
-  std::cout << "Accepted new connection, FD(" << new_socket->descriptor << ") ";
-  std::cout << "ip: " << new_socket->getIpAddress();
-  std::cout << ":" << new_socket->getPort() << "\n";
-  // new_socket->send("Hello, you have been connected.");
+  log << "Accepted new connection, FD(" << new_socket->descriptor << ") ";
+  log << "ip: " << new_socket->getIpAddress();
+  log << ":" << new_socket->getPort() << "\n";
   connections.emplace_back(new_socket);
 }
 
 void Server::removeConnection(const Connection& peer) {
   peer.socket->getPeerName();
-  std::cout << "Peer disconnected, FD(" << peer.socket->descriptor << ") ";
-  std::cout << "ip: " << peer.socket->getIpAddress();
-  std::cout << ":" << peer.socket->getPort() << "\n";
+  log << "Peer disconnected, FD(" << peer.socket->descriptor << ") ";
+  log << "ip: " << peer.socket->getIpAddress();
+  log << ":" << peer.socket->getPort() << "\n";
   peer.socket->~Socket();
 }
 
