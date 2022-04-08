@@ -1,10 +1,15 @@
 #include "server.hpp"
 
 int main() {
+  Logger log = {&std::cout};
+
+  fs::Config config(log);
+  config.load("./config/server.cfg");
+
   RAMStorage storage;
   StrEncoder encoder;
-  Logger log = {&std::cout};
-  Server server(8888, storage, encoder, log);
+
+  Server server(config.get<int>("port"), storage, encoder, log);
 
   server.loop();
 }
