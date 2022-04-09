@@ -30,3 +30,15 @@
 *.exe
 *.out
 *.app
+
+# IDE folders
+.vscode
+.idea
+
+# Build files
+bin
+build
+cmake-build-debug
+
+# Other
+*.DS_Store
