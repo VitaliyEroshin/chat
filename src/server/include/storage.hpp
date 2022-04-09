@@ -8,6 +8,8 @@
 #include <list>
 #include "entities.hpp"
 #include "encoder.hpp"
+#include "filesystem.hpp"
+#include "logger.hpp"
 
 class Storage {
 public:
@@ -64,13 +66,17 @@ public:
 };
 
 struct Block {
-    static const size_t block_size = 256;
+    size_t block_size;
     std::string block;
     std::vector<std::string> data;
 
     void save(const std::string& path);
     
+    size_t size();
+
     std::string& operator[](size_t i);
+    
+    void add(const std::string& s);
 
     Block(const std::string& path, const std::string& block);
 
@@ -90,4 +96,25 @@ public:
     Block& operator[](size_t i);
 
     LRUCache(size_t size, const std::string& path);
+};
+
+class SmartStorage : public Storage {
+public:
+  int getUser(const login_t& login, const password_t& password) override;
+  int addUser(const login_t& login, const password_t& password) override;
+  const User& getUserReference(userid_t id) override;
+
+  int createChat(userid_t creator) override;
+  int inviteToChat(userid_t selfId, userid_t target, chatid_t chat) override;
+  chatid_t getChat(userid_t selfId) override;
+  int setUserChat(userid_t id, chatid_t chat) override;
+  
+  const std::vector<userid_t>& getUserFriends(userid_t id) override;
+  const std::vector<chatid_t>& getUserChats(userid_t id) override;
+  int addFriend(userid_t selfId, userid_t target) override;
+  SmartStorage(const std::string& configPath, Logger& logger);
+private:
+  fs::Config config;
+  LRUCache users;
+  LRUCache userdata;
 };

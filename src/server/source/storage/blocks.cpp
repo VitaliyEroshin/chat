@@ -1,20 +1,37 @@
 #include "storage.hpp"
+#include <filesystem>
 
 void Block::save(const std::string& path) {
   std::ofstream stream(path);
+  stream << block_size << "\n";
   for (auto &row : data) {
     stream << row << "\n";
   }
+}
+
+size_t Block::size() {
+  return block_size;
 }
 
 std::string& Block::operator[](size_t i) {
   return data[i];
 }
 
+void Block::add(const std::string& s) {
+  data.push_back(s);
+  ++block_size;
+}
+
 Block::Block(const std::string& path, const std::string& block): block(block) {
+  if (!std::filesystem::exists(path)) {
+    block_size = 0;
+    return;
+  }
   std::ifstream stream(path);
+  std::string s;
+  std::getline(stream, s);
+  block_size = std::stoi(s);
   for (size_t i = 0; i < block_size; ++i) {
-    std::string s;
     std::getline(stream, s);
     data.push_back(s);
   }
