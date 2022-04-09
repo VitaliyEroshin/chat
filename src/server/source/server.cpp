@@ -158,8 +158,7 @@ void Server::parseCommand(const Object& object, Connection& user) {
 
 void Server::addMessage(Object object, Connection& user) {
   object.author = user.user;
-  const User& usr = storage.getUserReference(user.user);
-  object.message = "[" + usr.getNickname() + "] " + object.message;
+  object.message = "[" + storage.getUserNickname(user.user) + "] " + object.message;
   for (auto &other : connections) {
     if (other == user) {
       continue;

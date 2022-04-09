@@ -20,8 +20,8 @@ public:
   virtual int inviteToChat(userid_t selfId, userid_t target, chatid_t chat) = 0;
   virtual chatid_t getChat(userid_t selfId) = 0;
   
-  virtual const User& getUserReference(userid_t id) = 0;
-  
+  virtual std::string getUserNickname(userid_t id) = 0;
+
   virtual int setUserChat(userid_t id, chatid_t chat) = 0;
   virtual std::vector<userid_t> getUserFriends(userid_t id) = 0;
   virtual std::vector<chatid_t> getUserChats(userid_t id) = 0;
@@ -48,6 +48,7 @@ class RAMStorage: public Storage {
 
   userid_t generateUserId();
   chatid_t generateChatId();
+  const User& getUserReference(userid_t id);
 
 public:
   int getUser(const login_t& login, const password_t& password) override;
@@ -57,7 +58,7 @@ public:
   int inviteToChat(userid_t selfId, userid_t target, chatid_t chat) override;
   chatid_t getChat(userid_t selfId) override;
 
-  const User& getUserReference(userid_t id) override;
+  std::string getUserNickname(userid_t id) override;
 
   int setUserChat(userid_t id, chatid_t chat) override;
   std::vector<userid_t> getUserFriends(userid_t id) override;
@@ -104,7 +105,6 @@ class SmartStorage : public Storage {
 public:
   int getUser(const login_t& login, const password_t& password) override;
   int addUser(const login_t& login, const password_t& password) override;
-  const User& getUserReference(userid_t id) override;
 
   int createChat(userid_t creator) override;
   int inviteToChat(userid_t selfId, userid_t target, chatid_t chat) override;
@@ -115,6 +115,8 @@ public:
   std::vector<chatid_t> getUserChats(userid_t id) override;
   int addFriend(userid_t selfId, userid_t target) override;
   SmartStorage(const std::string& configPath, Logger& logger);
+
+  std::string getUserNickname(userid_t id) override;
 private:
   
   int getUserCount();

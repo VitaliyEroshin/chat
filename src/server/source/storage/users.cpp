@@ -39,6 +39,10 @@ const User& RAMStorage::getUserReference(userid_t id)  {
   return users[id];
 }
 
+std::string RAMStorage::getUserNickname(userid_t id) {
+  return getUserReference(id).getNickname();
+}
+
 chatid_t RAMStorage::getChat(userid_t selfId) {
   if (!currentChat.count(selfId)) {
     return 0;

@@ -91,16 +91,11 @@ int SmartStorage::addUser(const login_t& login, const password_t& password) {
 
   int blockId = getUserDataBlock(id);
   Block& dataBlock = userdata[blockId];
-  s = std::to_string(id) + " 0";
+  s = std::to_string(id) + " " + login;
   dataBlock.add(s);
   ++userCount;
   dataBlock.save(config.get<std::string>("userDataPath") + std::to_string(blockId));
   return id;
-}
-
-const User& SmartStorage::getUserReference(userid_t id) {
-  // Avoid compile warning.
-  return std::move(User());
 }
 
 int SmartStorage::getChatsCount() {
@@ -227,4 +222,13 @@ int SmartStorage::addFriend(userid_t selfId, userid_t target) {
   s += std::to_string(target) + " ";
   block.save();
   return 0;
+}
+
+std::string SmartStorage::getUserNickname(userid_t id) {
+  Block& block = userdata[getUserDataBlock(id)];
+  std::stringstream ss(block[getUserDataBlockPosition(id)]);
+  std::string value;
+  ss >> value;
+  ss >> value;
+  return value;
 }
