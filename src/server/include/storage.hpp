@@ -23,8 +23,8 @@ public:
   virtual const User& getUserReference(userid_t id) = 0;
   
   virtual int setUserChat(userid_t id, chatid_t chat) = 0;
-  virtual const std::vector<userid_t>& getUserFriends(userid_t id) = 0;
-  virtual const std::vector<chatid_t>& getUserChats(userid_t id) = 0;
+  virtual std::vector<userid_t> getUserFriends(userid_t id) = 0;
+  virtual std::vector<chatid_t> getUserChats(userid_t id) = 0;
   virtual int addFriend(userid_t selfId, userid_t target) = 0;
 };
 
@@ -60,8 +60,8 @@ public:
   const User& getUserReference(userid_t id) override;
 
   int setUserChat(userid_t id, chatid_t chat) override;
-  const std::vector<userid_t>& getUserFriends(userid_t id) override;
-  const std::vector<chatid_t>& getUserChats(userid_t id) override;
+  std::vector<userid_t> getUserFriends(userid_t id) override;
+  std::vector<chatid_t> getUserChats(userid_t id) override;
   int addFriend(userid_t selfId, userid_t target) override;
 };
 
@@ -111,8 +111,8 @@ public:
   chatid_t getChat(userid_t selfId) override;
   int setUserChat(userid_t id, chatid_t chat) override;
   
-  const std::vector<userid_t>& getUserFriends(userid_t id) override;
-  const std::vector<chatid_t>& getUserChats(userid_t id) override;
+  std::vector<userid_t> getUserFriends(userid_t id) override;
+  std::vector<chatid_t> getUserChats(userid_t id) override;
   int addFriend(userid_t selfId, userid_t target) override;
   SmartStorage(const std::string& configPath, Logger& logger);
 private:
@@ -120,11 +120,24 @@ private:
   int getUserCount();
   int getUserDataBlock(size_t id);
   int getUserDataBlockPosition(size_t id);
-  int getUserById();
+  std::string& getUserDataById(size_t id);
+
+  int getChatsCount();
+  bool isMember(Block& block, userid_t member);
+  bool isMember(chatid_t chat, userid_t member);
+
+  void addAvailableChat(userid_t id, chatid_t chat);
 
   int userCount = -1;
+  int chatCount = -1;
+
+  std::map<userid_t, chatid_t> currentChat;
+  std::map<chatid_t, std::set<userid_t>> chatListeners;
+
   fs::Config config;
   LRUCache users;
   LRUCache userdata;
   LRUCache friends;
+  LRUCache chats;
+  LRUCache availableChats;
 };

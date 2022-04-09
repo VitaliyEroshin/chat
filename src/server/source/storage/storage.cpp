@@ -7,11 +7,15 @@ SmartStorage::SmartStorage(const std::string& configPath, Logger& logger)
     : config(logger, configPath),
       users(2, config.get<std::string>("userAuthDataPath")),
       userdata(2, config.get<std::string>("userDataPath")),
-      friends(2, config.get<std::string>("friendsDataPath"))
+      friends(2, config.get<std::string>("friendsDataPath")),
+      chats(2, config.get<std::string>("chatsDataPath")),
+      availableChats(2, config.get<std::string>("availableChatsDataPath"))
 {
   std::filesystem::create_directories(config.get<std::string>("userAuthDataPath"));
   std::filesystem::create_directories(config.get<std::string>("userDataPath"));
   std::filesystem::create_directories(config.get<std::string>("friendsDataPath"));
+  std::filesystem::create_directories(config.get<std::string>("chatsDataPath"));
+  std::filesystem::create_directories(config.get<std::string>("availableChatsDataPath"));
 }
 
 bool isPrefix(const std::string& s, const std::string& prefix) {
@@ -87,7 +91,7 @@ int SmartStorage::addUser(const login_t& login, const password_t& password) {
 
   int blockId = getUserDataBlock(id);
   Block& dataBlock = userdata[blockId];
-  s = std::to_string(id) + " _userdata_";
+  s = std::to_string(id) + " 0";
   dataBlock.add(s);
   ++userCount;
   dataBlock.save(config.get<std::string>("userDataPath") + std::to_string(blockId));
@@ -95,26 +99,113 @@ int SmartStorage::addUser(const login_t& login, const password_t& password) {
 }
 
 const User& SmartStorage::getUserReference(userid_t id) {
+  // Avoid compile warning.
+  return std::move(User());
+}
 
+int SmartStorage::getChatsCount() {
+  if (chatCount != -1) {
+    return chatCount;
+  }
+  std::string path = config.get<std::string>("chatsDataPath");
+  
+  int blocksCount = fs::getFileCount(path);
+  if (blocksCount == 0) {
+    chatCount = 0;
+    return 0;
+  }
+  
+  chatCount = blocksCount;
+  return chatCount;
+}
+
+bool SmartStorage::isMember(Block& block, userid_t member) {
+  return block[0].find(" " + std::to_string(member) + " ") != std::string::npos;
+}
+
+bool SmartStorage::isMember(chatid_t chat, userid_t member) {
+  Block& block = chats[std::to_string(chat)];
+  return isMember(block, member);
 }
 
 int SmartStorage::createChat(userid_t creator) {
-  
+  chatid_t id = getChatsCount() + 1;
+  Block& block = chats[std::to_string(id)];
+  block[0] = " " + std::to_string(creator) + " ";
+  block.save();
+  addAvailableChat(creator, id);
+  ++chatCount;
+  return 0;
+}
+
+void SmartStorage::addAvailableChat(userid_t id, chatid_t chat) {
+  Block& block = availableChats[getUserDataBlock(id)];
+  block[getUserDataBlockPosition(id)] += std::to_string(chat) + " ";
+  block.save();
 }
 
 int SmartStorage::inviteToChat(userid_t selfId, userid_t target, chatid_t chat) {
+  if (target == selfId || target > userCount) {
+    return -4;
+  }
 
+  if (chat > chatCount) {
+    return -1;
+  }
+
+  Block& block = chats[std::to_string(chat)];
+  if (!isMember(block, selfId)) {
+    return -2;
+  }
+
+  if (!isMember(block, target)) {
+    addAvailableChat(target, chat);
+    block[1] += std::to_string(target) + " ";
+    block.save();
+  }
+
+  return 0;
 }
 
 chatid_t SmartStorage::getChat(userid_t selfId) {
-
+  if (!currentChat.count(selfId)) {
+    currentChat[selfId] = 0;
+    chatListeners[0].insert(selfId);
+  }
+  return currentChat[selfId];
 }
 
 int SmartStorage::setUserChat(userid_t id, chatid_t chat) {
+  if (chat < 0 || chat > chatCount) {
+    return -1;
+  };
 
+  if (!isMember(chat, id)) {
+    return -2;
+  };
+
+  if (currentChat.count(id)) {
+    chatListeners[currentChat[id]].erase(id);
+  }
+
+  currentChat[id] = chat;
+  chatListeners[chat].insert(id);
+  return 0;
+}
+
+std::vector<chatid_t> SmartStorage::getUserChats(userid_t id) {
+  Block& block = availableChats[getUserDataBlock(id)];
+  std::stringstream ss(block[getUserDataBlockPosition(id)]);
+  std::string chatId;
+
+  std::vector<chatid_t> chatlist;
+  while (ss >> chatId) {
+    chatlist.push_back(std::stoi(chatId));
+  }
+  return std::move(chatlist);
 }
   
-const std::vector<userid_t>& SmartStorage::getUserFriends(userid_t id) {
+std::vector<userid_t> SmartStorage::getUserFriends(userid_t id) {
   Block& block = friends[getUserDataBlock(id)];
   std::stringstream ss(block[getUserDataBlockPosition(id)]);
   std::string friendId;
@@ -122,14 +213,8 @@ const std::vector<userid_t>& SmartStorage::getUserFriends(userid_t id) {
   std::vector<userid_t> friendlist;
   while (ss >> friendId) {
     friendlist.push_back(std::stoi(friendId));
-    std::cout << friendId << ' ';
   }
-  std::cout << '\n';
-  return friendlist;
-}
-
-const std::vector<chatid_t>& SmartStorage::getUserChats(userid_t id) {
-
+  return std::move(friendlist);
 }
 
 int SmartStorage::addFriend(userid_t selfId, userid_t target) {
@@ -141,4 +226,5 @@ int SmartStorage::addFriend(userid_t selfId, userid_t target) {
   std::string& s = block[getUserDataBlockPosition(selfId)];
   s += std::to_string(target) + " ";
   block.save();
+  return 0;
 }

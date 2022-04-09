@@ -50,7 +50,7 @@ Block::Block(const std::string& path, const std::string& block)
 
 Block::Block(const std::string& block)
     : block(block), 
-      data(std::vector<std::string>(block_size)) 
+      data() 
 {}
 
 Block& LRUCache::operator[](const std::string& i) {

@@ -62,11 +62,11 @@ int RAMStorage::setUserChat(userid_t id, chatid_t chat) {
   return 0;
 }
 
-const std::vector<userid_t>& RAMStorage::getUserFriends(userid_t id) {
+std::vector<userid_t> RAMStorage::getUserFriends(userid_t id) {
   return friendsList[id];
 }
 
-const std::vector<chatid_t>& RAMStorage::getUserChats(userid_t id) {
+std::vector<chatid_t> RAMStorage::getUserChats(userid_t id) {
   return availableChats[id];
 }
 
