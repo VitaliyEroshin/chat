@@ -50,7 +50,8 @@ void Server::inviteToChatHandler(Object& callback, Connection& user, std::string
     userid_t target;
     ss >> target;
     storage.inviteToChat(user.user, target, currentChat);
-    callback.message = "You have invited " + storage.getUserReference(target).getNickname() 
+    callback.message = "You have invited " 
+      + storage.getUserNickname(target)
       + " to chat " + std::to_string(currentChat);
   }
 }
@@ -77,9 +78,11 @@ void Server::getFriendsHandler(Object& callback, Connection& user, std::stringst
 
   callback.message = "Your friends are: ";
   for (auto &usr : friends) {
-    callback.message += storage.getUserReference(usr).getNickname();
+    callback.message += storage.getUserNickname(usr) + "(" + std::to_string(usr) + ")";
     if (usr != friends.back()) {
       callback.message += ",";
+    } else {
+      callback.message += ".";
     }
   }
 }

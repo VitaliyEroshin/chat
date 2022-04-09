@@ -4,9 +4,12 @@
 #include <unordered_set>
 #include <set>
 #include <map>
-
+#include <fstream>
+#include <list>
 #include "entities.hpp"
 #include "encoder.hpp"
+#include "filesystem.hpp"
+#include "logger.hpp"
 
 class Storage {
 public:
@@ -17,11 +20,11 @@ public:
   virtual int inviteToChat(userid_t selfId, userid_t target, chatid_t chat) = 0;
   virtual chatid_t getChat(userid_t selfId) = 0;
   
-  virtual const User& getUserReference(userid_t id) = 0;
-  
+  virtual std::string getUserNickname(userid_t id) = 0;
+
   virtual int setUserChat(userid_t id, chatid_t chat) = 0;
-  virtual const std::vector<userid_t>& getUserFriends(userid_t id) = 0;
-  virtual const std::vector<chatid_t>& getUserChats(userid_t id) = 0;
+  virtual std::vector<userid_t> getUserFriends(userid_t id) = 0;
+  virtual std::vector<chatid_t> getUserChats(userid_t id) = 0;
   virtual int addFriend(userid_t selfId, userid_t target) = 0;
 };
 
@@ -45,6 +48,7 @@ class RAMStorage: public Storage {
 
   userid_t generateUserId();
   chatid_t generateChatId();
+  const User& getUserReference(userid_t id);
 
 public:
   int getUser(const login_t& login, const password_t& password) override;
@@ -54,10 +58,90 @@ public:
   int inviteToChat(userid_t selfId, userid_t target, chatid_t chat) override;
   chatid_t getChat(userid_t selfId) override;
 
-  const User& getUserReference(userid_t id) override;
+  std::string getUserNickname(userid_t id) override;
 
   int setUserChat(userid_t id, chatid_t chat) override;
-  const std::vector<userid_t>& getUserFriends(userid_t id) override;
-  const std::vector<chatid_t>& getUserChats(userid_t id) override;
+  std::vector<userid_t> getUserFriends(userid_t id) override;
+  std::vector<chatid_t> getUserChats(userid_t id) override;
   int addFriend(userid_t selfId, userid_t target) override;
+};
+
+struct Block {
+    std::string savePath;
+    size_t block_size;
+    std::string block;
+    std::vector<std::string> data;
+
+    void save(const std::string& path);
+    void save();
+
+    size_t size();
+
+    std::string& operator[](size_t i);
+    
+    void add(const std::string& s);
+
+    Block(const std::string& path, const std::string& block);
+
+    Block(const std::string& block);
+    Block() {};
+    ~Block() = default;
+};
+
+class LRUCache {
+    size_t maxCacheSize;
+    std::string path;
+    std::list<Block> cache;
+    std::unordered_map<std::string, std::list<Block>::iterator> iterators;
+    
+public:
+    Block& operator[](const std::string& i);
+    Block& operator[](size_t i);
+
+    LRUCache(size_t size, const std::string& path);
+};
+
+class SmartStorage : public Storage {
+public:
+  int getUser(const login_t& login, const password_t& password) override;
+  int addUser(const login_t& login, const password_t& password) override;
+
+  int createChat(userid_t creator) override;
+  int inviteToChat(userid_t selfId, userid_t target, chatid_t chat) override;
+  chatid_t getChat(userid_t selfId) override;
+  int setUserChat(userid_t id, chatid_t chat) override;
+  
+  std::vector<userid_t> getUserFriends(userid_t id) override;
+  std::vector<chatid_t> getUserChats(userid_t id) override;
+  int addFriend(userid_t selfId, userid_t target) override;
+  SmartStorage(const std::string& configPath, Logger& logger);
+
+  std::string getUserNickname(userid_t id) override;
+private:
+  
+  int getUserCount();
+  int getUserDataBlock(size_t id);
+  int getUserDataBlockPosition(size_t id);
+  std::string& getUserDataById(size_t id);
+
+  int getChatsCount();
+  bool isMember(Block& block, userid_t member);
+  bool isMember(chatid_t chat, userid_t member);
+
+  bool isFriend(const std::string&, userid_t target);
+
+  void addAvailableChat(userid_t id, chatid_t chat);
+
+  int userCount = -1;
+  int chatCount = -1;
+
+  std::map<userid_t, chatid_t> currentChat;
+  std::map<chatid_t, std::set<userid_t>> chatListeners;
+
+  fs::Config config;
+  LRUCache users;
+  LRUCache userdata;
+  LRUCache friends;
+  LRUCache chats;
+  LRUCache availableChats;
 };

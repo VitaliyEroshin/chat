@@ -6,16 +6,19 @@
 #include <sstream>
 #include <iostream>
 #include <cassert>
+#include <filesystem>
 #include "logger.hpp"
 
 
 namespace fs {
   std::string loadContent(const std::string& path);
     
+  int getFileCount(const std::string& path);
 
   class Config {
   public:
     Config(Logger& log);
+    Config(Logger& log, const std::string& path);
     void load(const std::string& path);
 
     template<typename T>

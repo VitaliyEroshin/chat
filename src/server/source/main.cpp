@@ -6,7 +6,7 @@ int main() {
   fs::Config config(log);
   config.load("./config/server.cfg");
 
-  RAMStorage storage;
+  SmartStorage storage("./config/storage.cfg", log);
   StrEncoder encoder;
 
   Server server(config.get<int>("port"), storage, encoder, log);

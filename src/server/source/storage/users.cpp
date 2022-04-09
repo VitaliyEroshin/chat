@@ -39,6 +39,10 @@ const User& RAMStorage::getUserReference(userid_t id)  {
   return users[id];
 }
 
+std::string RAMStorage::getUserNickname(userid_t id) {
+  return getUserReference(id).getNickname();
+}
+
 chatid_t RAMStorage::getChat(userid_t selfId) {
   if (!currentChat.count(selfId)) {
     return 0;
@@ -62,11 +66,11 @@ int RAMStorage::setUserChat(userid_t id, chatid_t chat) {
   return 0;
 }
 
-const std::vector<userid_t>& RAMStorage::getUserFriends(userid_t id) {
+std::vector<userid_t> RAMStorage::getUserFriends(userid_t id) {
   return friendsList[id];
 }
 
-const std::vector<chatid_t>& RAMStorage::getUserChats(userid_t id) {
+std::vector<chatid_t> RAMStorage::getUserChats(userid_t id) {
   return availableChats[id];
 }
 
