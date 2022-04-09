@@ -43,3 +43,8 @@ fs::Config::Config(Logger& log): log(log) {}
 fs::Config::Config(Logger& log, const std::string& path): log(log) {
   load(path);
 }
+
+int fs::getFileCount(const std::string& path) {
+  using std::filesystem::directory_iterator;
+  return std::distance(directory_iterator(path), directory_iterator{});
+}

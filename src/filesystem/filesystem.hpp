@@ -6,12 +6,14 @@
 #include <sstream>
 #include <iostream>
 #include <cassert>
+#include <filesystem>
 #include "logger.hpp"
 
 
 namespace fs {
   std::string loadContent(const std::string& path);
     
+  int getFileCount(const std::string& path);
 
   class Config {
   public:
