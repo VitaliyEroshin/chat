@@ -4,7 +4,8 @@
 #include <unordered_set>
 #include <set>
 #include <map>
-
+#include <fstream>
+#include <list>
 #include "entities.hpp"
 #include "encoder.hpp"
 
@@ -60,4 +61,33 @@ public:
   const std::vector<userid_t>& getUserFriends(userid_t id) override;
   const std::vector<chatid_t>& getUserChats(userid_t id) override;
   int addFriend(userid_t selfId, userid_t target) override;
+};
+
+struct Block {
+    static const size_t block_size = 256;
+    std::string block;
+    std::vector<std::string> data;
+
+    void save(const std::string& path);
+    
+    std::string& operator[](size_t i);
+
+    Block(const std::string& path, const std::string& block);
+
+    Block(const std::string& block);
+    Block() {};
+    ~Block() = default;
+};
+
+class LRUCache {
+    size_t maxCacheSize;
+    std::string path;
+    std::list<Block> cache;
+    std::unordered_map<std::string, std::list<Block>::iterator> iterators;
+    
+public:
+    Block& operator[](const std::string& i);
+    Block& operator[](size_t i);
+
+    LRUCache(size_t size, const std::string& path);
 };
