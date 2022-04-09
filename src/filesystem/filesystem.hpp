@@ -16,6 +16,7 @@ namespace fs {
   class Config {
   public:
     Config(Logger& log);
+    Config(Logger& log, const std::string& path);
     void load(const std::string& path);
 
     template<typename T>
