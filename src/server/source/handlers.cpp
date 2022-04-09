@@ -78,9 +78,11 @@ void Server::getFriendsHandler(Object& callback, Connection& user, std::stringst
 
   callback.message = "Your friends are: ";
   for (auto &usr : friends) {
-    callback.message += storage.getUserNickname(usr);
+    callback.message += storage.getUserNickname(usr) + "(" + std::to_string(usr) + ")";
     if (usr != friends.back()) {
       callback.message += ",";
+    } else {
+      callback.message += ".";
     }
   }
 }

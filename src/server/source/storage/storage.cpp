@@ -130,12 +130,13 @@ int SmartStorage::createChat(userid_t creator) {
   block.save();
   addAvailableChat(creator, id);
   ++chatCount;
-  return 0;
+  return id;
 }
 
 void SmartStorage::addAvailableChat(userid_t id, chatid_t chat) {
   Block& block = availableChats[getUserDataBlock(id)];
   block[getUserDataBlockPosition(id)] += std::to_string(chat) + " ";
+  block.block_size = std::max(block.size(), static_cast<size_t>(getUserDataBlockPosition(id) + 1));
   block.save();
 }
 
@@ -175,7 +176,7 @@ int SmartStorage::setUserChat(userid_t id, chatid_t chat) {
     return -1;
   };
 
-  if (!isMember(chat, id)) {
+  if (chat != 0 && !isMember(chat, id)) {
     return -2;
   };
 
@@ -197,7 +198,7 @@ std::vector<chatid_t> SmartStorage::getUserChats(userid_t id) {
   while (ss >> chatId) {
     chatlist.push_back(std::stoi(chatId));
   }
-  return std::move(chatlist);
+  return chatlist;
 }
   
 std::vector<userid_t> SmartStorage::getUserFriends(userid_t id) {
@@ -209,7 +210,11 @@ std::vector<userid_t> SmartStorage::getUserFriends(userid_t id) {
   while (ss >> friendId) {
     friendlist.push_back(std::stoi(friendId));
   }
-  return std::move(friendlist);
+  return friendlist;
+}
+
+bool SmartStorage::isFriend(const std::string& s, userid_t target) {
+  return s.find(" " + std::to_string(target) + " ") != std::string::npos;
 }
 
 int SmartStorage::addFriend(userid_t selfId, userid_t target) {
@@ -219,7 +224,17 @@ int SmartStorage::addFriend(userid_t selfId, userid_t target) {
 
   Block& block = friends[getUserDataBlock(selfId)];
   std::string& s = block[getUserDataBlockPosition(selfId)];
+
+  if (isFriend(s, target)) {
+    return 0;
+  }
+  if (s.empty()) {
+    s.push_back(' ');
+  }
   s += std::to_string(target) + " ";
+  block.block_size = std::max(block.size(), 
+    static_cast<size_t>(getUserDataBlockPosition(selfId)) + 1);
+
   block.save();
   return 0;
 }

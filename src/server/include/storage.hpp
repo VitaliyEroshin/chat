@@ -128,6 +128,8 @@ private:
   bool isMember(Block& block, userid_t member);
   bool isMember(chatid_t chat, userid_t member);
 
+  bool isFriend(const std::string&, userid_t target);
+
   void addAvailableChat(userid_t id, chatid_t chat);
 
   int userCount = -1;
