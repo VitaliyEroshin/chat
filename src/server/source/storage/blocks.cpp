@@ -2,6 +2,7 @@
 #include <filesystem>
 
 void Block::save(const std::string& path) {
+  savePath = path;
   std::ofstream stream(path);
   stream << block_size << "\n";
   for (auto &row : data) {
@@ -9,11 +10,18 @@ void Block::save(const std::string& path) {
   }
 }
 
+void Block::save() {
+  save(savePath);
+}
+
 size_t Block::size() {
   return block_size;
 }
 
 std::string& Block::operator[](size_t i) {
+  if (i >= data.size()) {
+    data.resize(i + 1);
+  }
   return data[i];
 }
 
@@ -22,7 +30,10 @@ void Block::add(const std::string& s) {
   ++block_size;
 }
 
-Block::Block(const std::string& path, const std::string& block): block(block) {
+Block::Block(const std::string& path, const std::string& block)
+    : block(block),
+      savePath(path)
+{
   if (!std::filesystem::exists(path)) {
     block_size = 0;
     return;

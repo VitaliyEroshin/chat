@@ -66,12 +66,14 @@ public:
 };
 
 struct Block {
+    std::string savePath;
     size_t block_size;
     std::string block;
     std::vector<std::string> data;
 
     void save(const std::string& path);
-    
+    void save();
+
     size_t size();
 
     std::string& operator[](size_t i);
@@ -114,7 +116,15 @@ public:
   int addFriend(userid_t selfId, userid_t target) override;
   SmartStorage(const std::string& configPath, Logger& logger);
 private:
+  
+  int getUserCount();
+  int getUserDataBlock(size_t id);
+  int getUserDataBlockPosition(size_t id);
+  int getUserById();
+
+  int userCount = -1;
   fs::Config config;
   LRUCache users;
   LRUCache userdata;
+  LRUCache friends;
 };
