@@ -4,7 +4,8 @@
 #include <filesystem>
 
 SmartStorage::SmartStorage(const std::string& configPath, Logger& logger)
-    : config(logger, configPath),
+    : log(logger),
+      config(logger, configPath),
       users(2, config.get<std::string>("userAuthDataPath")),
       userdata(2, config.get<std::string>("userDataPath")),
       friends(2, config.get<std::string>("friendsDataPath")),
@@ -159,8 +160,11 @@ int SmartStorage::inviteToChat(userid_t selfId, userid_t target, chatid_t chat) 
 
   if (!isMember(block, target)) {
     addAvailableChat(target, chat);
-    block[1] += std::to_string(target) + " ";
+    block[0] += std::to_string(target) + " ";
     block.save();
+    log << "Added " << target << " into memberlist of chat " << chat << std::endl;
+  } else {
+    log << "Target " << target << " is already member of chat, ignoring query." << std::endl;
   }
 
   return 0;
@@ -279,7 +283,7 @@ int SmartStorage::getMessageBlockPosition(int id) {
   return (id - 1) % config.get<int>("messageBlockSize");
 }
 
-void SmartStorage::setMessage(Object object, Encoder& encoder) {
+void SmartStorage::setMessage(Object object, Encoder& encoder, chatid_t chatid) {
   if (!object.hasId()) {
     object.setId(getMessageCount() + 1);
     ++messageCount;
@@ -287,11 +291,11 @@ void SmartStorage::setMessage(Object object, Encoder& encoder) {
 
   Block& block = messages[getMessageBlock(object.id)];
   std::string& s = block[getMessageBlockPosition(object.id)];
-  s = encoder.encode(object);
+  s = std::to_string(chatid) + " " + encoder.encode(object);
   block.save();
 }
 
-void SmartStorage::addMessage(Object object, Encoder& encoder, chatid_t chatid) {
+void SmartStorage::addMessage(Object& object, Encoder& encoder, chatid_t chatid) {
   Block& block = chats[std::to_string(chatid)];
   int prev = std::stoi(block[1]);
   
@@ -302,10 +306,10 @@ void SmartStorage::addMessage(Object object, Encoder& encoder, chatid_t chatid) 
   if (prev != 0) {
     Object p = getMessage(prev, encoder);
     p.setNext(object.id);
-    setMessage(p, encoder);
+    setMessage(p, encoder, chatid);
   }
   
-  setMessage(object, encoder);
+  setMessage(object, encoder, chatid);
   block[1] = std::to_string(object.id);
   block.save();
 }
@@ -318,11 +322,31 @@ Object SmartStorage::getMessage(int id, Encoder& encoder) {
     object.setReturnCode(-1);
     return object;
   }
-  return encoder.decode(block[getMessageBlockPosition(id)]);
+
+  std::stringstream ss(s);
+  chatid_t chat;
+  ss >> chat;
+
+  return encoder.decode(ss.str());
 }
 
 Object SmartStorage::getLastMessage(Encoder& encoder, chatid_t chatid) {
   Block& block = chats[std::to_string(chatid)];
   int id = std::stoi(block[1]);
   return getMessage(id, encoder);
+}
+
+chatid_t SmartStorage::getMessageChatid(int id) {
+  Block& block = messages[getMessageBlock(id)];
+  std::string& s = block[getMessageBlockPosition(id)];
+  if (s.empty()) {
+    Object object;
+    object.setReturnCode(-1);
+    return -1;
+  }
+
+  std::stringstream ss(s);
+  chatid_t chat;
+  ss >> chat;
+  return chat;
 }

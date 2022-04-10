@@ -11,6 +11,8 @@ void Server::initHandlers() {
     addHandler("/chats", &Server::getChatsHandler);
     addHandler("/help", &Server::getHelpHandler);
     addHandler("/about", &Server::getAboutHandler);
+    addHandler("/scrollup", &Server::scrollUpHandler);
+    addHandler("/scrolldown", &Server::scrollDownHandler);
 }
 
 template<typename Handler>
@@ -49,10 +51,19 @@ void Server::inviteToChatHandler(Object& callback, Connection& user, std::string
   } else {
     userid_t target;
     ss >> target;
-    storage.inviteToChat(user.user, target, currentChat);
-    callback.content = "You have invited " 
-      + storage.getUserNickname(target)
-      + " to chat " + std::to_string(currentChat);
+    
+    int code = storage.inviteToChat(user.user, target, currentChat);
+    if (code == -4) {
+      callback.content = "User id is invalid";
+    } else if (code == -1) {
+      callback.content = "You are in invalid chat";
+    } else if (code == -2) {
+      callback.content = "You have not permission to invite people in that chat.";
+    } else {
+      callback.content = "You have invited " 
+        + storage.getUserNickname(target)
+        + " to chat " + std::to_string(currentChat);
+    }
   }
 }
 
@@ -109,4 +120,66 @@ void Server::getHelpHandler(Object& callback, Connection& user, std::stringstrea
 
 void Server::getAboutHandler(Object& callback, Connection& user, std::stringstream& ss) {
   callback.content = fs::loadContent("./content/about.txt");
+}
+
+void Server::addMessageHandler(Object& object, Connection& user, std::stringstream& ss) {
+  chatid_t chat = storage.getChat(user.user);
+  object.setAuthor(user.user);
+  storage.addMessage(object, encoder, chat);
+
+  for (auto &other : connections) {
+    if (other == user) {
+      continue;
+    }
+    if (storage.getChat(other.user) != storage.getChat(user.user)) {
+      continue;
+    }
+
+    other.socket->send(encoder.encode(object));
+  }
+}
+
+void Server::scrollUpHandler(Object& object, Connection& user, std::stringstream& ss) {
+  if (!object.hasId()) {
+    return;
+  }
+  chatid_t chat = storage.getMessageChatid(object.id);
+  if (!storage.isMember(chat, user.user)) {
+    return;
+  }
+  log << "User " << user.user << " asked for scrollup. Sending messages: \n";
+  Object obj = storage.getMessage(object.id, encoder);
+  obj.type = Object::Type::text;
+  user.socket->send(encoder.encode(obj));
+  log << "Sent " << obj.content << "\n";
+  for (size_t i = 0; i < 3; ++i) {
+    if (!obj.hasPrev() || obj.prev == 0) {
+      break;
+    }
+    obj = storage.getMessage(obj.prev, encoder);
+    user.socket->send(encoder.encode(obj));
+    log << "Sent " << obj.content << "\n";
+  }
+}
+
+void Server::scrollDownHandler(Object& object, Connection& user, std::stringstream& ss) {
+  if (!object.hasId()) {
+    return;
+  }
+  chatid_t chat = storage.getMessageChatid(object.id);
+  if (!storage.isMember(chat, user.user)) {
+    return;
+  }
+  
+  Object obj = storage.getMessage(object.id, encoder);
+  user.socket->send(encoder.encode(obj));
+  for (size_t i = 0; i < 3; ++i) {
+    if (!obj.hasNext() || obj.next == 0) {
+      break;
+    }
+    obj = storage.getMessage(obj.next, encoder);
+    user.socket->send(encoder.encode(obj));
+  }
+  object = Object();
+  object.type = Object::Type::returnCode;
 }

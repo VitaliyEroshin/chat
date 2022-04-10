@@ -27,10 +27,12 @@ public:
   virtual std::vector<chatid_t> getUserChats(userid_t id) = 0;
   virtual int addFriend(userid_t selfId, userid_t target) = 0;
 
-  virtual void setMessage(Object object, Encoder& encoder) = 0;
-  virtual void addMessage(Object object, Encoder& encoder, chatid_t chatid) = 0;
+  virtual void setMessage(Object object, Encoder& encoder, chatid_t chatid) = 0;
+  virtual void addMessage(Object& object, Encoder& encoder, chatid_t chatid) = 0;
   virtual Object getMessage(int id, Encoder& encoder) = 0;
   virtual Object getLastMessage(Encoder& encoder, chatid_t chatid) = 0;
+  virtual chatid_t getMessageChatid(int id) = 0;
+  virtual bool isMember(chatid_t chat, userid_t member) = 0;
 };
 
 // class RAMStorage: public Storage {
@@ -123,10 +125,12 @@ public:
 
   std::string getUserNickname(userid_t id) override;
 
-  void setMessage(Object object, Encoder& encoder) override;
-  void addMessage(Object object, Encoder& encoder, chatid_t chatid) override;
+  void setMessage(Object object, Encoder& encoder, chatid_t chatid) override;
+  void addMessage(Object& object, Encoder& encoder, chatid_t chatid) override;
   Object getMessage(int id, Encoder& encoder) override;
   Object getLastMessage(Encoder& encoder, chatid_t chatid) override;
+  chatid_t getMessageChatid(int id) override;
+  bool isMember(chatid_t chat, userid_t member) override;
 
 private:
   
@@ -142,7 +146,6 @@ private:
 
   int getChatsCount();
   bool isMember(Block& block, userid_t member);
-  bool isMember(chatid_t chat, userid_t member);
 
   bool isFriend(const std::string&, userid_t target);
 
@@ -155,6 +158,7 @@ private:
   std::map<userid_t, chatid_t> currentChat;
   std::map<chatid_t, std::set<userid_t>> chatListeners;
 
+  Logger& log;
   fs::Config config;
   LRUCache users;
   LRUCache userdata;

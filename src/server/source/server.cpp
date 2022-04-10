@@ -157,16 +157,18 @@ void Server::parseCommand(const Object& object, Connection& user) {
 }
 
 void Server::addMessage(Object object, Connection& user) {
-  object.author = user.user;
-  object.content = "[" + storage.getUserNickname(user.user) + "] " + object.content;
-  for (auto &other : connections) {
-    if (other == user) {
-      continue;
-    }
-    if (storage.getChat(other.user) != storage.getChat(user.user)) {
-      continue;
-    }
+  std::stringstream ss;
+  addMessageHandler(object, user, ss);
+  // object.author = user.user;
+  // object.content = "[" + storage.getUserNickname(user.user) + "] " + object.content;
+  // for (auto &other : connections) {
+  //   if (other == user) {
+  //     continue;
+  //   }
+  //   if (storage.getChat(other.user) != storage.getChat(user.user)) {
+  //     continue;
+  //   }
 
-    other.socket->send(encoder.encode(object));
-  }
+  //   other.socket->send(encoder.encode(object));
+  // }
 }
