@@ -101,17 +101,19 @@ public:
 private:
   void processInputTab(Cursor::Position pivot, Cursor::Position end);
   void processInputArrow(Cursor::Position pivot, Cursor::Position end);
-  void processInputBackspace(Cursor::Position pivot, Cursor::Position end, Cursor::Position size);
+  void processInputBackspace(Cursor::Position& pivot, Cursor::Position end, Cursor::Position& size);
   void refreshInputBuffer(Cursor::Position pivot, Cursor::Position size);
   void log(size_t cell, output_t s);
+
+  void scrollChatUp();
+  void scrollChatDown();
+
+  void allocateChatSpace(Cursor::Position& pivot, Cursor::Position& size);
+  void deallocateChatSpace(Cursor::Position& pivot, Cursor::Position& size);
 
 public:
   void clearWindow();
 
   size_t getWindowHeight() const { return out.window.height; };
   size_t getWindowWidth() const { return out.window.width; }
-
-  void scrollChatUp();
-
-  void scrollChatDown();
 };

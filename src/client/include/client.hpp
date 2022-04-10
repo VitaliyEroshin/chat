@@ -56,6 +56,12 @@ private:
   void scrollup();
   void scrolldown();
 
+  void drawChatPointer();
+  void allocateChatSpace();
+  void deallocateChatSpace();
+
+  size_t chatspace = 1;
+
   std::atomic<bool> run;
   std::atomic<bool> update;
 

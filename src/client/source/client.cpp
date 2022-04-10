@@ -89,7 +89,7 @@ void Client::sendCommand(const std::string& text) {
 
 void Client::initializeGUI() {
   ui.clearWindow();
-  ui.print({ui.out.window.height - 2, 2}, "> ");
+  // ui.print({ui.out.window.height - 2, 2}, "> ");
 }
 
 int ceil(int a, int b) {
@@ -97,35 +97,21 @@ int ceil(int a, int b) {
 }
 
 void Client::refreshMessages() {
-  ui.print({1, 1}, {ui.out.window.height - 3, ui.out.window.width - 2}, "");
-  size_t space = ui.getWindowHeight() - 3;
+  size_t space = ui.getWindowHeight() - 2 - chatspace;
   size_t width = ui.getWindowWidth() - 2;
+  ui.print({1, 1}, {space, width}, "");
   auto it = data.head;
 
   while (it != data.objects.end()) {
     
     size_t height = ceil((*it).content.size(), width);
-    //ui.print({2, 1}, {1, 15}, std::to_string(space) + " " + std::to_string(height));
     if (space < height)
       return;
 
-    //ui.print({1, 1}, {1, 10}, "Hello");
     ui.print({space - height, 1}, {height, width - 2}, (*it).content);
     space -= height;
     ++it;
   }
-  
-
-
-  // ui.print({1, 1}, {ui.out.window.height - 3, ui.out.window.width - 2}, "");
-  // auto it = data.head;
-  // for (int i = 0; i < ui.out.window.height - 4; ++i) {
-  //   ui.print({ui.out.window.height - 3 - i, 2}, (*it).content);
-  //   if (it == data.objects.begin()) {
-  //     break;
-  //   }
-  //   --it;
-  // }
 }
 
 int Client::session() {
@@ -239,9 +225,13 @@ void Client::readServer(std::atomic<bool>& update, std::atomic<bool>& run) {
 
 void Client::readUserInput(std::atomic<bool>& update, std::atomic<bool>& run) {
   while (run.load()) {
-    std::string command = ui.input({ui.out.window.height - 2, 4}, {1, ui.out.window.width - 8});
+    drawChatPointer();
+    std::string command = ui.input({ui.out.window.height - 1 - chatspace, 4},
+       {chatspace, ui.out.window.width - 8});
 
-    ui.print({ui.out.window.height - 2, 2}, {1, ui.out.window.width - 4}, "> ");
+    ui.print({ui.out.window.height - 1 - chatspace, 4}, {chatspace, ui.getWindowWidth() - 4}, "");
+    chatspace = 1;
+
     if (command == "/quit") {
       ui.~UserInterface();
       run.store(false);
@@ -310,4 +300,16 @@ void Client::scrolldown() {
     data.head--;
     update.store(true);
   }
+}
+
+void Client::allocateChatSpace() {
+
+}
+
+void Client::deallocateChatSpace() {
+
+}
+
+void Client::drawChatPointer() {
+  ui.print({ui.out.window.height - 2 - chatspace, 2}, {chatspace + 2, 2}, "  >   ");
 }
