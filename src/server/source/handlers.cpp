@@ -24,33 +24,33 @@ void Server::addFriendHandler(Object& callback, Connection& user, std::stringstr
   int code = storage.addFriend(user.user, target);
 
   if (code == -1) {
-    callback.message = "No such user found";
+    callback.content = "No such user found";
   }
 }
 
 void Server::getSelfIdHandler(Object& callback, Connection& user, std::stringstream& ss) {
-  callback.message = "Your ID is: " + std::to_string(user.user);
+  callback.content = "Your ID is: " + std::to_string(user.user);
 }
 
 void Server::getChatIdHandler(Object& callback, Connection& user, std::stringstream& ss) {
-  callback.message = "You are in chat with ID: " + std::to_string(storage.getChat(user.user));
+  callback.content = "You are in chat with ID: " + std::to_string(storage.getChat(user.user));
 }
 
 void Server::makeChatHandler(Object& callback, Connection& user, std::stringstream& ss) {
   chatid_t id = storage.createChat(user.user);
   storage.setUserChat(user.user, id);
-  callback.message = "You have successfully created chat with ID: " + std::to_string(id);
+  callback.content = "You have successfully created chat with ID: " + std::to_string(id);
 }
 
 void Server::inviteToChatHandler(Object& callback, Connection& user, std::stringstream& ss) {
   chatid_t currentChat = storage.getChat(user.user);
   if (!currentChat) {
-    callback.message = "You cannot invite users to the global chat";
+    callback.content = "You cannot invite users to the global chat";
   } else {
     userid_t target;
     ss >> target;
     storage.inviteToChat(user.user, target, currentChat);
-    callback.message = "You have invited " 
+    callback.content = "You have invited " 
       + storage.getUserNickname(target)
       + " to chat " + std::to_string(currentChat);
   }
@@ -61,28 +61,28 @@ void Server::switchChatHandler(Object& callback, Connection& user, std::stringst
   ss >> id;
   int code = storage.setUserChat(user.user, id);
   if (code == -1) {
-    callback.message = "No chat found.";
+    callback.content = "No chat found.";
   } else if (code == -2) {
-    callback.message = "You are not a member of the chat";
+    callback.content = "You are not a member of the chat";
   } else {
-    callback.message = "You have succesfully switched the chat";
+    callback.content = "You have succesfully switched the chat";
   }
 }
 
 void Server::getFriendsHandler(Object& callback, Connection& user, std::stringstream& ss) {
   const std::vector<userid_t>& friends = storage.getUserFriends(user.user);
   if (friends.empty()) {
-    callback.message = "You have no friends :(";
+    callback.content = "You have no friends :(";
     return;
   }
 
-  callback.message = "Your friends are: ";
+  callback.content = "Your friends are: ";
   for (auto &usr : friends) {
-    callback.message += storage.getUserNickname(usr) + "(" + std::to_string(usr) + ")";
+    callback.content += storage.getUserNickname(usr) + "(" + std::to_string(usr) + ")";
     if (usr != friends.back()) {
-      callback.message += ",";
+      callback.content += ",";
     } else {
-      callback.message += ".";
+      callback.content += ".";
     }
   }
 }
@@ -90,23 +90,23 @@ void Server::getFriendsHandler(Object& callback, Connection& user, std::stringst
 void Server::getChatsHandler(Object& callback, Connection& user, std::stringstream& ss) {
   const std::vector<chatid_t>& userchats = storage.getUserChats(user.user);
   if (userchats.empty()) {
-    callback.message = "You have no available chats :(";
+    callback.content = "You have no available chats :(";
     return;
   }
 
-  callback.message += "Your available chats are: ";
+  callback.content += "Your available chats are: ";
   for (auto &cht : userchats) {
-    callback.message += std::to_string(cht);
+    callback.content += std::to_string(cht);
     if (cht != userchats.back()) {
-      callback.message += ", ";
+      callback.content += ", ";
     }
   }
 }
 
 void Server::getHelpHandler(Object& callback, Connection& user, std::stringstream& ss) {
-  callback.message = fs::loadContent("./content/help.txt");
+  callback.content = fs::loadContent("./content/help.txt");
 }
 
 void Server::getAboutHandler(Object& callback, Connection& user, std::stringstream& ss) {
-  callback.message = fs::loadContent("./content/about.txt");
+  callback.content = fs::loadContent("./content/about.txt");
 }

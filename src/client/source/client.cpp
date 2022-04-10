@@ -47,23 +47,23 @@ int Client::auth() {
   std::string username = ui.askForm({1, 1}, {1, 12}, "Username: ");
   std::string password = ui.askForm({2, 1}, {1, 12}, "Password: ");
 
-  Object obj;
-  obj.type = Object::Type::loginAttempt;
-  obj.message += username;
-  obj.message.push_back(1);
-  obj.message += password;
+  Object object;
+  object.type = Object::Type::loginAttempt;
+  object.content += username;
+  object.content.push_back(1);
+  object.content += password;
 
-  socket.send(encoder.encode(obj));
+  socket.send(encoder.encode(object));
 
   std::string query = socket.read();
 
-  obj = encoder.decode(query);
+  object = encoder.decode(query);
 
-  if (obj.ret == 0) {
+  if (object.code == 0) {
     ui.print({4, 1}, "Logged in!");
-  } else if (obj.ret == 1) {
+  } else if (object.code == 1) {
     ui.print({4, 1}, "Created new user!");
-  } else if (obj.ret == 2) {
+  } else if (object.code == 2) {
     ui.print({4, 1}, "Wrong password");
     return -1;
   }
@@ -72,21 +72,18 @@ int Client::auth() {
 }
 
 void Client::sendText(const std::string& text) {
-  Object obj;
-  obj.message = text;
-  obj.type = Object::Type::text;
-  obj.id = 1555;
-  std::string en = encoder.encode(obj);
-  data.insert(obj.message);
-  socket.send(en);
+  Object object;
+  object.content = text;
+  object.type = Object::Type::text;
+  data.insert(object.content);
+  socket.send(encoder.encode(object));
 }
 
 void Client::sendCommand(const std::string& text) {
-  Object obj;
-  obj.message = text;
-  obj.type = Object::Type::command;
-  std::string en = encoder.encode(obj);
-  socket.send(en);
+  Object object;
+  object.content = text;
+  object.type = Object::Type::command;
+  socket.send(encoder.encode(object));
 }
 
 
@@ -99,7 +96,7 @@ void Client::refreshMessages() {
   ui.print({1, 1}, {ui.out.window.height - 3, ui.out.window.width - 2}, "");
   auto it = data.head;
   for (int i = 0; i < ui.out.window.height - 4; ++i) {
-    ui.print({ui.out.window.height - 3 - i, 2}, (*it).message);
+    ui.print({ui.out.window.height - 3 - i, 2}, (*it).content);
     if (it == data.objects.begin()) {
       break;
     }
@@ -208,9 +205,9 @@ void Client::readServer(std::atomic<bool>& update, std::atomic<bool>& run) {
       return;
     }
 
-    Object obj = encoder.decode(message);
-    if (obj.type == Object::Type::text) {
-      parseMessage(obj.message);
+    Object object = encoder.decode(message);
+    if (object.type == Object::Type::text) {
+      parseMessage(object.content);
       update.store(true);
     }
   }
@@ -246,14 +243,13 @@ void Client::readUserInput(std::atomic<bool>& update, std::atomic<bool>& run) {
 }
 
 void ObjectTree::insert(const std::string& text) {
-  Object obj;
-  obj.message = text;
-  objects.insert(head, obj);
+  Object object;
+  object.content = text;
+  objects.insert(head, object);
 }
 
 ObjectTree::ObjectTree() {
   Object empty;
-  empty.message = "";
   objects.push_back(empty);
   head = objects.begin();
 }
