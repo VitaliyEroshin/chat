@@ -33,12 +33,12 @@ struct Object {
   void setNext(int next_);
   void setReturnCode(int code_);
 
-  bool hasId();
-  bool hasAuthor();
-  bool hasTimestamp();
-  bool hasThread();
-  bool hasReply();
-  bool hasPrev();
-  bool hasNext();
-  bool hasReturnCode(int code_);
+  bool hasId() const;
+  bool hasAuthor() const;
+  bool hasTimestamp() const;
+  bool hasThread() const;
+  bool hasReply() const;
+  bool hasPrev() const;
+  bool hasNext() const;
+  bool hasReturnCode() const;
 };

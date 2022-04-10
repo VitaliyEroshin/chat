@@ -51,26 +51,26 @@ void Object::setReturnCode(int code_) {
     set(attributes, 7, true);
 }
 
-bool Object::hasId() 
+bool Object::hasId() const
 { return bit(attributes, 0); }
 
-bool Object::hasAuthor() 
+bool Object::hasAuthor() const
 { return bit(attributes, 1); }
 
-bool Object::hasTimestamp() 
+bool Object::hasTimestamp() const
 { return bit(attributes, 2); }
 
-bool Object::hasThread() 
+bool Object::hasThread() const
 { return bit(attributes, 3); }
 
-bool Object::hasReply() 
+bool Object::hasReply() const
 { return bit(attributes, 4); }
 
-bool Object::hasPrev() 
+bool Object::hasPrev() const
 { return bit(attributes, 5); }
 
-bool Object::hasNext() 
+bool Object::hasNext() const
 { return bit(attributes, 6); }
 
-bool Object::hasReturnCode() 
+bool Object::hasReturnCode() const 
 { return bit(attributes, 7); }
