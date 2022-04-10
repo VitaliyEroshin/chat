@@ -18,6 +18,7 @@ struct ObjectTree {
   void insert(const std::string& text);
   void insert(const Object& obj);
   ObjectTree();
+  ~ObjectTree() = default;
 };
 
 class Client {
