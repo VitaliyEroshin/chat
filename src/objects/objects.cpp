@@ -1,10 +1,10 @@
 #include "objects.hpp"
 
 bool bit(char x, int i) {
-    return x & (1<<i);
+    return (x & (1<<i)) != 0;
 }
 
-void set(char x, int i, bool value) {
+void set(char& x, int i, bool value) {
     if (value) 
         x |= (1<<i);
     else if (bit(x, i)) 
@@ -17,7 +17,7 @@ void Object::setId(int id_) {
 }
 
 void Object::setAuthor(int author_) {
-    author = author_
+    author = author_;
     set(attributes, 1, true);
 }
 

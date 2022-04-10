@@ -148,6 +148,10 @@ Object StrEncoder::decode(const Encoder::bytes& bytes) {
     object.code = fromBytes<int>(bytes.substr(ptr, sizeof(int)));
     ptr += sizeof(int);
   }
+
+  for (int i = ptr; i < bytes.size(); ++i) {
+    object.content += bytes[i];
+  }
   
   return object;
 }
