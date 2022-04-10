@@ -16,6 +16,7 @@ struct ObjectTree {
   std::list<Object>::iterator head;
 
   void insert(const std::string& text);
+  void insert(const Object& obj);
   ObjectTree();
 };
 
@@ -52,6 +53,13 @@ private:
   void readUserInput(std::atomic<bool>& update, std::atomic<bool>& run);
   void refreshOutput(std::atomic<bool>& update, std::atomic<bool>& run);
 
+  void scrollup();
+  void scrolldown();
+
+  std::atomic<bool> run;
+  std::atomic<bool> update;
+
+  friend UserInterface;
 public:
   explicit Client(Encoder& encoder, fs::Config& config);
   int session();

@@ -4,7 +4,7 @@ Client::Client(Encoder& encoder, fs::Config& config)
     : status(Status::offline), 
       config(config), 
       socket(Socket(config.get<int>("port"))), 
-      ui(UserInterface()), 
+      ui(UserInterface(*this)), 
       encoder(encoder) 
   {}
 
@@ -75,7 +75,7 @@ void Client::sendText(const std::string& text) {
   Object object;
   object.content = text;
   object.type = Object::Type::text;
-  data.insert(object.content);
+  data.insert(object);
   socket.send(encoder.encode(object));
 }
 
@@ -92,16 +92,40 @@ void Client::initializeGUI() {
   ui.print({ui.out.window.height - 2, 2}, "> ");
 }
 
+int ceil(int a, int b) {
+  return (a + b - 1) / b;
+}
+
 void Client::refreshMessages() {
   ui.print({1, 1}, {ui.out.window.height - 3, ui.out.window.width - 2}, "");
+  size_t space = ui.getWindowHeight() - 3;
+  size_t width = ui.getWindowWidth() - 2;
   auto it = data.head;
-  for (int i = 0; i < ui.out.window.height - 4; ++i) {
-    ui.print({ui.out.window.height - 3 - i, 2}, (*it).content);
-    if (it == data.objects.begin()) {
-      break;
-    }
-    --it;
+
+  while (it != data.objects.end()) {
+    
+    size_t height = ceil((*it).content.size(), width);
+    //ui.print({2, 1}, {1, 15}, std::to_string(space) + " " + std::to_string(height));
+    if (space < height)
+      return;
+
+    //ui.print({1, 1}, {1, 10}, "Hello");
+    ui.print({space - height, 1}, {height, width - 2}, (*it).content);
+    space -= height;
+    ++it;
   }
+  
+
+
+  // ui.print({1, 1}, {ui.out.window.height - 3, ui.out.window.width - 2}, "");
+  // auto it = data.head;
+  // for (int i = 0; i < ui.out.window.height - 4; ++i) {
+  //   ui.print({ui.out.window.height - 3 - i, 2}, (*it).content);
+  //   if (it == data.objects.begin()) {
+  //     break;
+  //   }
+  //   --it;
+  // }
 }
 
 int Client::session() {
@@ -217,7 +241,7 @@ void Client::readUserInput(std::atomic<bool>& update, std::atomic<bool>& run) {
   while (run.load()) {
     std::string command = ui.input({ui.out.window.height - 2, 4}, {1, ui.out.window.width - 8});
 
-    ui.print({ui.out.window.height - 2, 2}, {1, ui.out.window.width - 8}, "> ");
+    ui.print({ui.out.window.height - 2, 2}, {1, ui.out.window.width - 4}, "> ");
     if (command == "/quit") {
       ui.~UserInterface();
       run.store(false);
@@ -225,6 +249,15 @@ void Client::readUserInput(std::atomic<bool>& update, std::atomic<bool>& run) {
       return;
     }
 
+    if (command == "/up") {
+      scrollup();
+      continue;
+    }
+
+    if (command == "/down") {
+      scrolldown();
+      continue;
+    }
     if (command == "/refresh") {
       initializeGUI();
     }
@@ -245,11 +278,36 @@ void Client::readUserInput(std::atomic<bool>& update, std::atomic<bool>& run) {
 void ObjectTree::insert(const std::string& text) {
   Object object;
   object.content = text;
-  objects.insert(head, object);
+  insert(object);
+}
+
+void ObjectTree::insert(const Object& obj) {
+  if (head == objects.end()) {
+    objects.push_back(obj);
+    head = objects.begin();
+  } else {
+    auto it = head;
+    objects.insert(it, obj);
+    --head;
+  }
 }
 
 ObjectTree::ObjectTree() {
-  Object empty;
-  objects.push_back(empty);
   head = objects.begin();
+}
+
+void Client::scrollup() {
+  auto it = data.head;
+  ++it;
+  if (it != data.objects.end()) {
+    data.head = it;
+    update.store(true);
+  }
+}
+
+void Client::scrolldown() {
+  if (data.head != data.objects.begin()) {
+    data.head--;
+    update.store(true);
+  }
 }

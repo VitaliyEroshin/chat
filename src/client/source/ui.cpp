@@ -1,4 +1,5 @@
 #include "ui.hpp"
+#include "client.hpp"
 
 void UserInterface::print(
         Cursor::Position pivot, Cursor::Position size, const output_t& text) {
@@ -243,8 +244,8 @@ output_t UserInterface::Input::Buffer::getRight() {
   return s;
 }
 
-UserInterface::UserInterface()
-  : out(Output()), cursor(out), in(Input(out, keyboard)) {
+UserInterface::UserInterface(Client& client)
+  : out(Output()), cursor(out), in(Input(out, keyboard)), client(client) {
   system("stty raw -echo");
   allocateSpace(getWindowHeight() - 1);
 }
@@ -289,4 +290,12 @@ void UserInterface::print(const output_t& s) {
 void UserInterface::print(output_char_t c) {
   out.out << c;
   ++cursor.position.y;
+}
+
+void UserInterface::scrollChatDown() {
+  client.scrolldown();
+}
+
+void UserInterface::scrollChatUp() {
+  client.scrollup();
 }

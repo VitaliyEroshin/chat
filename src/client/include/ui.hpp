@@ -7,6 +7,8 @@
 #include <unistd.h>
 #include "types.hpp"
 
+class Client;
+
 class UserInterface {
 public:
   struct Output {
@@ -78,8 +80,9 @@ public:
   Cursor cursor;
   Input in;
   Keyboard keyboard;
+  Client& client;
 
-  UserInterface();
+  UserInterface(Client& client);
 
   ~UserInterface();
 
@@ -108,11 +111,7 @@ public:
   size_t getWindowHeight() const { return out.window.height; };
   size_t getWindowWidth() const { return out.window.width; }
 
-  void scrollChatUp() {
-    // TODO
-  }
+  void scrollChatUp();
 
-  void scrollChatDown() {
-    // TODO
-  }
+  void scrollChatDown();
 };
