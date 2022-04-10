@@ -3,7 +3,8 @@
 
 void UserInterface::print(
         Cursor::Position pivot, Cursor::Position size, const output_t& text) {
-  
+  while (!printing.try_lock());
+
   auto pos = cursor.position;
   cursor.moveTo(pivot);
 
@@ -19,6 +20,7 @@ void UserInterface::print(
   }
   cursor.moveTo(pos);
   out.flush();
+  printing.unlock();
 }
 
 void UserInterface::print(
@@ -69,8 +71,10 @@ output_t UserInterface::input(
     }
 
     in.buffer.left.push_back(c);
+    while (!printing.try_lock());
     print(c);
     out.flush();
+    printing.unlock();
 
     if (!in.buffer.right.empty()) {
       refreshInputBuffer(pivot, size);
@@ -134,12 +138,22 @@ void UserInterface::processInputArrow(Cursor::Position pivot, Cursor::Position e
     if (cursor.position.x == pivot.x) {
       scrollChatUp();
       return;
+    } else {
+      for (size_t i = 0; i <= end.y - pivot.y; ++i) {
+        in.buffer.moveRight();
+      }
+      cursor.move(Cursor::Direction::up);
     }
   }
   if (direction == Cursor::Direction::down) {
     if (cursor.position.x == end.x) {
       scrollChatDown();
       return;
+    } else {
+      for (size_t i = 0; i <= end.y - pivot.y; ++i) {
+        in.buffer.moveLeft();
+      }
+      cursor.move(Cursor::Direction::down);
     }
   }
 }
@@ -252,6 +266,7 @@ UserInterface::UserInterface(Client& client)
   : out(Output()), cursor(out), in(Input(out, keyboard)), client(client) {
   system("stty raw -echo");
   allocateSpace(getWindowHeight() - 1);
+  printing.unlock();
 }
 
 UserInterface::~UserInterface() {

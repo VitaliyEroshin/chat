@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <deque>
+#include <mutex>
 
 #include <sys/ioctl.h>
 #include <unistd.h>
@@ -81,6 +82,7 @@ public:
   Input in;
   Keyboard keyboard;
   Client& client;
+  std::mutex printing;
 
   UserInterface(Client& client);
 
