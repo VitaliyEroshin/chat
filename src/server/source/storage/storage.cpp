@@ -129,6 +129,7 @@ int SmartStorage::createChat(userid_t creator) {
   chatid_t id = getChatsCount() + 1;
   Block& block = chats[std::to_string(id)];
   block[0] = " " + std::to_string(creator) + " ";
+  block[1] = "0";
   block.save();
   addAvailableChat(creator, id);
   ++chatCount;
@@ -281,11 +282,31 @@ int SmartStorage::getMessageBlockPosition(int id) {
 void SmartStorage::setMessage(Object object, Encoder& encoder) {
   if (!object.hasId()) {
     object.setId(getMessageCount() + 1);
+    ++messageCount;
   }
 
   Block& block = messages[getMessageBlock(object.id)];
   std::string& s = block[getMessageBlockPosition(object.id)];
   s = encoder.encode(object);
+  block.save();
+}
+
+void SmartStorage::addMessage(Object object, Encoder& encoder, chatid_t chatid) {
+  Block& block = chats[std::to_string(chatid)];
+  int prev = std::stoi(block[1]);
+  
+  object.setPrev(prev);
+  object.setId(getMessageCount() + 1);
+  ++messageCount;
+  
+  if (prev != 0) {
+    Object p = getMessage(prev, encoder);
+    p.setNext(object.id);
+    setMessage(p, encoder);
+  }
+  
+  setMessage(object, encoder);
+  block[1] = std::to_string(object.id);
   block.save();
 }
 
@@ -298,4 +319,10 @@ Object SmartStorage::getMessage(int id, Encoder& encoder) {
     return object;
   }
   return encoder.decode(block[getMessageBlockPosition(id)]);
+}
+
+Object SmartStorage::getLastMessage(Encoder& encoder, chatid_t chatid) {
+  Block& block = chats[std::to_string(chatid)];
+  int id = std::stoi(block[1]);
+  return getMessage(id, encoder);
 }

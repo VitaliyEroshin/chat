@@ -21,6 +21,7 @@ size_t Block::size() {
 std::string& Block::operator[](size_t i) {
   if (i >= data.size()) {
     data.resize(i + 1);
+    block_size = data.size();
   }
   return data[i];
 }

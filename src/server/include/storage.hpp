@@ -119,7 +119,9 @@ public:
   std::string getUserNickname(userid_t id) override;
 
   void setMessage(Object object, Encoder& encoder);
+  void addMessage(Object object, Encoder& encoder, chatid_t chatid);
   Object getMessage(int id, Encoder& encoder);
+  Object getLastMessage(Encoder& encoder, chatid_t chatid);
 
 private:
   
