@@ -9,13 +9,15 @@ SmartStorage::SmartStorage(const std::string& configPath, Logger& logger)
       userdata(2, config.get<std::string>("userDataPath")),
       friends(2, config.get<std::string>("friendsDataPath")),
       chats(2, config.get<std::string>("chatsDataPath")),
-      availableChats(2, config.get<std::string>("availableChatsDataPath"))
+      availableChats(2, config.get<std::string>("availableChatsDataPath")),
+      messages(2, config.get<std::string>("messagesDataPath"))
 {
   std::filesystem::create_directories(config.get<std::string>("userAuthDataPath"));
   std::filesystem::create_directories(config.get<std::string>("userDataPath"));
   std::filesystem::create_directories(config.get<std::string>("friendsDataPath"));
   std::filesystem::create_directories(config.get<std::string>("chatsDataPath"));
   std::filesystem::create_directories(config.get<std::string>("availableChatsDataPath"));
+  std::filesystem::create_directories(config.get<std::string>("messagesDataPath"));
 }
 
 bool isPrefix(const std::string& s, const std::string& prefix) {
@@ -246,4 +248,54 @@ std::string SmartStorage::getUserNickname(userid_t id) {
   ss >> value;
   ss >> value;
   return value;
+}
+
+int SmartStorage::getMessageCount() {
+  if (messageCount != -1) {
+    return messageCount;
+  }
+
+  std::string path = config.get<std::string>("messagesDataPath");
+  
+  int blocksCount = fs::getFileCount(path);
+  if (blocksCount == 0) {
+    messageCount = 0;
+    return 0;
+  }
+  Block& block = messages[blocksCount - 1];
+  std::stringstream ss(block[block.size() - 1]);
+  std::string id;
+  ss >> id;
+  messageCount = std::stoi(id);
+  return messageCount;
+}
+
+int SmartStorage::getMessageBlock(int id) {
+  return (id - 1) / config.get<int>("messageBlockSize");
+}
+
+int SmartStorage::getMessageBlockPosition(int id) {
+  return (id - 1) % config.get<int>("messageBlockSize");
+}
+
+void SmartStorage::setMessage(Object object, Encoder& encoder) {
+  if (!object.hasId()) {
+    object.setId(getMessageCount() + 1);
+  }
+
+  Block& block = messages[getMessageBlock(object.id)];
+  std::string& s = block[getMessageBlockPosition(object.id)];
+  s = encoder.encode(object);
+  block.save();
+}
+
+Object SmartStorage::getMessage(int id, Encoder& encoder) {
+  Block& block = messages[getMessageBlock(id)];
+  std::string& s = block[getMessageBlockPosition(id)];
+  if (s.empty()) {
+    Object object;
+    object.setReturnCode(-1);
+    return object;
+  }
+  return encoder.decode(block[getMessageBlockPosition(id)]);
 }

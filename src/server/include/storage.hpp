@@ -117,11 +117,20 @@ public:
   SmartStorage(const std::string& configPath, Logger& logger);
 
   std::string getUserNickname(userid_t id) override;
+
+  void setMessage(Object object, Encoder& encoder);
+  Object getMessage(int id, Encoder& encoder);
+
 private:
   
   int getUserCount();
   int getUserDataBlock(size_t id);
   int getUserDataBlockPosition(size_t id);
+
+  int getMessageCount();
+  int getMessageBlock(int id);
+  int getMessageBlockPosition(int id);
+
   std::string& getUserDataById(size_t id);
 
   int getChatsCount();
@@ -134,6 +143,7 @@ private:
 
   int userCount = -1;
   int chatCount = -1;
+  int messageCount = -1;
 
   std::map<userid_t, chatid_t> currentChat;
   std::map<chatid_t, std::set<userid_t>> chatListeners;
@@ -144,4 +154,5 @@ private:
   LRUCache friends;
   LRUCache chats;
   LRUCache availableChats;
+  LRUCache messages;
 };
