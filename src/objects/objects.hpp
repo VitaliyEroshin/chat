@@ -11,11 +11,34 @@ struct Object {
     command = 4,
   };
 
-  objectid_t id;
+  
+  char attributes = 0;
+  int id;
+  int author;
   int timestamp;
-  objectid_t parentId;
-  userid_t author;
-  code_t ret;
+  int thread;
+  int reply;
+  int prev;
+  int next;
+  int code;
+  std::string content;
   Type type;
-  object_message_t message;
+
+  void setId(int id_);
+  void setAuthor(int author_);
+  void setTimestamp(int timestamp_);
+  void setThread(int thread_);
+  void setReply(int reply_);
+  void setPrev(int prev_);
+  void setNext(int next_);
+  void setReturnCode(int code_);
+
+  bool hasId();
+  bool hasAuthor();
+  bool hasTimestamp();
+  bool hasThread();
+  bool hasReply();
+  bool hasPrev();
+  bool hasNext();
+  bool hasReturnCode(int code_);
 };
