@@ -140,14 +140,20 @@ void Server::addMessageHandler(Object& object, Connection& user, std::stringstre
 }
 
 void Server::scrollUpHandler(Object& object, Connection& user, std::stringstream& ss) {
+  log << "User " << user.user << " asked for scrollup.\n";
+  chatid_t chat = storage.getChat(user.user);
+  log << "Currently, user is in " << chat << ". Getting last message.\n";
+  object = storage.getLastMessage(encoder, chat);
   if (!object.hasId()) {
+    log << "Catched object does not have id. Ignoring.\n";
     return;
   }
-  chatid_t chat = storage.getMessageChatid(object.id);
+  // chatid_t chat = storage.getMessageChatid(object.id);
   if (!storage.isMember(chat, user.user)) {
+    log << "User is not a member of " << chat << ". Ignoring.\n";
     return;
   }
-  log << "User " << user.user << " asked for scrollup. Sending messages: \n";
+  log << "Sending messages: \n";
   Object obj = storage.getMessage(object.id, encoder);
   obj.type = Object::Type::text;
   user.socket->send(encoder.encode(obj));
