@@ -69,5 +69,6 @@ private:
   friend UserInterface;
 public:
   explicit Client(Encoder& encoder, fs::Config& config);
+  ~Client() = default;
   int session();
 };

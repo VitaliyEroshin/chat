@@ -19,6 +19,7 @@ public:
     };
 
     Output();
+    ~Output() = default;
 
     Window window;
     std::ostream& out;
@@ -42,6 +43,8 @@ public:
 
     explicit Cursor(Output& output)
       : position({0, 0}), output(output) {};
+
+    ~Cursor() = default;
 
     void move(Direction direction);
 
@@ -75,6 +78,7 @@ public:
 
     Input(Output& output, Keyboard& keyboard)
       : output(output), keyboard(keyboard) {};
+    ~Input() = default;
   };
   
   Output out;
