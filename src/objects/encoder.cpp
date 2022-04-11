@@ -72,43 +72,86 @@ T StrEncoder::fromBytes(const Encoder::bytes& b) {
 Encoder::bytes StrEncoder::encode(const Object& object) {
   std::string s = "";
   s.push_back(getTypeId(object));
+  s.push_back(object.attributes);
+  if (object.hasId())
+    s += toBytes(object.id);
 
-  if (object.type == Object::Type::loginAttempt || object.type == Object::Type::command) {
-    s += object.message;
-    return s;
-  }
-  if (object.type == Object::Type::returnCode) {
-    s += toBytes(object.ret);
-    return s;
-  }
+  if (object.hasAuthor())
+    s += toBytes(object.author);
 
-  s += toBytes(object.id);
-  // s += toBytes(object.author);
-  // s += toBytes(object.timestamp);
-  // s += toBytes(object.parentId);
-  s += object.message;
+  if (object.hasTimestamp())
+    s += toBytes(object.timestamp);
+
+  if (object.hasThread())
+    s += toBytes(object.thread);
+
+  if (object.hasReply())
+    s += toBytes(object.reply);
+
+  if (object.hasPrev())
+    s += toBytes(object.prev);
+
+  if (object.hasNext())
+    s += toBytes(object.next);
+
+  if (object.hasReturnCode())
+    s += toBytes(object.code);
+
+  s += object.content;
   return s;
 }
 
 Object StrEncoder::decode(const Encoder::bytes& bytes) {
-  Object obj;
+  Object object;
   
   char type = bytes[0];
-  obj.type = fromTypeId(type);
+  object.type = fromTypeId(type);
+  object.attributes = bytes[1];
 
-  int ptr = 1;
-  if (obj.type == Object::Type::returnCode) {
-    obj.ret = fromBytes<code_t>(bytes.substr(ptr, sizeof(code_t)));
-    return obj;
+  int ptr = 2;
+  if (object.hasId()) {
+    object.id = fromBytes<int>(bytes.substr(ptr, sizeof(int)));
+    ptr += sizeof(int);
   }
 
-  if (obj.type != Object::Type::loginAttempt && obj.type != Object::Type::command) {
-    obj.id = fromBytes<objectid_t>(bytes.substr(ptr, sizeof(objectid_t)));
-    ptr += sizeof(objectid_t);
+  if (object.hasAuthor()) {
+    object.author = fromBytes<int>(bytes.substr(ptr, sizeof(int)));
+    ptr += sizeof(int);
+  }
+    
+  if (object.hasTimestamp()) {
+    object.timestamp = fromBytes<int>(bytes.substr(ptr, sizeof(int)));
+    ptr += sizeof(int);
+  }
+
+  if (object.hasThread()) {
+    object.thread = fromBytes<int>(bytes.substr(ptr, sizeof(int)));
+    ptr += sizeof(int);
+  }
+
+  if (object.hasReply()) {
+    object.reply = fromBytes<int>(bytes.substr(ptr, sizeof(int)));
+    ptr += sizeof(int);
+  }
+
+  if (object.hasPrev()) {
+    object.prev = fromBytes<int>(bytes.substr(ptr, sizeof(int)));
+    ptr += sizeof(int);
+  }
+
+  if (object.hasNext()) {
+    object.next = fromBytes<int>(bytes.substr(ptr, sizeof(int)));
+    ptr += sizeof(int);
+  }
+
+  if (object.hasReturnCode()) {
+    object.code = fromBytes<int>(bytes.substr(ptr, sizeof(int)));
+    ptr += sizeof(int);
   }
 
   for (int i = ptr; i < bytes.size(); ++i) {
-    obj.message += bytes[i];
+    object.content += bytes[i];
   }
-  return obj;
+  
+  return object;
 }

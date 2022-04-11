@@ -15,8 +15,9 @@ struct ObjectTree {
   std::list<Object> objects;
   std::list<Object>::iterator head;
 
-  void insert(const std::string& text);
+  void insert(const Object& obj);
   ObjectTree();
+  ~ObjectTree() = default;
 };
 
 class Client {
@@ -46,13 +47,27 @@ private:
   void showBackground(std::atomic<bool>& connecting);
   void listen();
 
-  void parseMessage(const std::string& message);
-  
-  void readServer(std::atomic<bool>& update, std::atomic<bool>& run);
-  void readUserInput(std::atomic<bool>& update, std::atomic<bool>& run);
-  void refreshOutput(std::atomic<bool>& update, std::atomic<bool>& run);
+  void readServer();
+  void readUserInput();
+  void refreshOutput();
 
+  void scrollup();
+  void scrolldown();
+
+  void drawChatPointer();
+  void allocateChatSpace();
+  void deallocateChatSpace();
+
+  size_t chatspace = 1;
+  size_t cachesize = 5;
+  size_t commandsContained = 0;
+
+  std::atomic<bool> run;
+  std::atomic<bool> update;
+
+  friend UserInterface;
 public:
   explicit Client(Encoder& encoder, fs::Config& config);
+  ~Client() = default;
   int session();
 };

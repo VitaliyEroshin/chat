@@ -73,4 +73,8 @@ private:
   void getChatsHandler(Object& callback, Connection& user, std::stringstream& ss);
   void getHelpHandler(Object& callback, Connection& user, std::stringstream& ss);
   void getAboutHandler(Object& callback, Connection& user, std::stringstream& ss);
+
+  void addMessageHandler(Object& object, Connection& user, std::stringstream& ss);
+  void scrollUpHandler(Object& object, Connection& user, std::stringstream& ss);
+  void scrollDownHandler(Object& object, Connection& user, std::stringstream& ss);
 };
