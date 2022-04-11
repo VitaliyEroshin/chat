@@ -75,10 +75,10 @@ output_t UserInterface::input(
     }
 
     in.buffer.left.push_back(c);
-    while (!printing.try_lock());
+    std::lock_guard<std::mutex> lock(printing);
     print(c);
     out.flush();
-    printing.unlock();
+    lock.~lock_guard();
 
     if (!in.buffer.right.empty()) {
       refreshInputBuffer(pivot, size);
@@ -123,11 +123,9 @@ void UserInterface::processInputArrow(Cursor::Position pivot, Cursor::Position e
 
     if (cursor.position.y == pivot.y) {
       cursor.moveTo({cursor.position.x - 1, end.y});
-    } else {
-      cursor.move(direction);
+      return;
     }
-  }
-  if (direction == Cursor::Direction::right) {
+  } else if (direction == Cursor::Direction::right) {
     if (cursor.position == Cursor::Position{end.x, end.y + 1} || in.buffer.right.empty())
       return;
 
@@ -135,32 +133,28 @@ void UserInterface::processInputArrow(Cursor::Position pivot, Cursor::Position e
 
     if (cursor.position.y == end.y && cursor.position.x != end.x) {
       cursor.moveTo({cursor.position.x + 1, pivot.y});
-    } else {
-      cursor.move(direction);
+      return;
     }
-  }
-  if (direction == Cursor::Direction::up) {
+  } else if (direction == Cursor::Direction::up) {
     if (cursor.position.x == pivot.x) {
       scrollChatUp();
       return;
-    } else {
-      for (size_t i = 0; i <= end.y - pivot.y; ++i) {
-        in.buffer.moveRight();
-      }
-      cursor.move(Cursor::Direction::up);
     }
-  }
-  if (direction == Cursor::Direction::down) {
+
+    for (size_t i = 0; i <= end.y - pivot.y; ++i) {
+      in.buffer.moveRight();
+    }
+  } else if (direction == Cursor::Direction::down) {
     if (cursor.position.x == end.x) {
       scrollChatDown();
       return;
-    } else {
-      for (size_t i = 0; i <= end.y - pivot.y; ++i) {
-        in.buffer.moveLeft();
-      }
-      cursor.move(Cursor::Direction::down);
+    }
+  
+    for (size_t i = 0; i <= end.y - pivot.y; ++i) {
+      in.buffer.moveLeft();
     }
   }
+  cursor.move(direction);
 }
 
 void UserInterface::refreshInputBuffer(Cursor::Position pivot, Cursor::Position size) {

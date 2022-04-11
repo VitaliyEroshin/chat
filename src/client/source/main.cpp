@@ -8,6 +8,5 @@ int main() {
   config.load("./config/client.cfg");
 
   Client client(encoder, config);
-  //client.test();
   client.session();
 }
