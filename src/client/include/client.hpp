@@ -15,7 +15,6 @@ struct ObjectTree {
   std::list<Object> objects;
   std::list<Object>::iterator head;
 
-  void insert(const std::string& text);
   void insert(const Object& obj);
   ObjectTree();
   ~ObjectTree() = default;
@@ -48,8 +47,6 @@ private:
   void showBackground(std::atomic<bool>& connecting);
   void listen();
 
-  void parseMessage(const std::string& message);
-  
   void readServer();
   void readUserInput();
   void refreshOutput();

@@ -6,13 +6,13 @@ Client::Client(Encoder& encoder, fs::Config& config)
       socket(Socket(config.get<int>("port"))), 
       ui(UserInterface(*this)), 
       encoder(encoder) 
-  {}
+{}
 
 bool Client::setAddress(std::string ip, int port) {
   socket.setAddress(port);
-  if (ip == "localhost") {
+  if (ip == "localhost")
     ip = "127.0.0.1";
-  }
+  
   return cstd::inet_pton(AF_INET, ip.c_str(), &(socket.address.sin_addr));
 }
 
@@ -21,9 +21,7 @@ void Client::setupAddress() {
   int port;
   try {
     port = std::stoi(ui.askForm({2, 1}, {1, 4}, "Enter the port: "));
-  } catch (...) {
-
-  }
+  } catch (...) {}
 
   while (!setAddress(ip, port)) {
     ui.print({1, 1}, {3, 30}, "");
@@ -32,9 +30,7 @@ void Client::setupAddress() {
     
     try {
       port = std::stoi(ui.askForm({2, 1}, {1, 4}, "Enter the port: "));
-    } catch (...) {
-      
-    }
+    } catch (...) {}
   }
   status = Status::connecting;
 }
@@ -56,7 +52,6 @@ int Client::auth() {
   socket.send(encoder.encode(object));
 
   std::string query = socket.read();
-
   object = encoder.decode(query);
 
   if (object.code == 0) {
@@ -75,7 +70,6 @@ void Client::sendText(const std::string& text) {
   Object object;
   object.content = text;
   object.type = Object::Type::text;
-  // data.insert(object);
   socket.send(encoder.encode(object));
 }
 
@@ -102,8 +96,7 @@ void Client::refreshMessages() {
   auto it = data.head;
 
   while (it != data.objects.end()) {
-    
-    size_t height = ceil((*it).content.size(), width);
+    size_t height = ceil((*it).content.size(), width - 2);
     if (space < height)
       return;
 
@@ -114,13 +107,11 @@ void Client::refreshMessages() {
 }
 
 int Client::session() {
-  if (connect() < 0) {
+  if (connect() < 0)
     return -1;
-  }
 
-  if (auth() < 0) {
+  if (auth() < 0)
     return -1;
-  }
 
   initializeGUI();
   listen();
@@ -134,12 +125,17 @@ int Client::connect() {
   std::thread background(&Client::showBackground, this, std::ref(connecting));
 
   if (connectToHost() < 0) {
-    cstd::sleep(2);
+    cstd::sleep(
+      config.get<int>("connectionBackgroundDuration")
+    );
+
     connecting.store(false);
-    cstd::usleep(500 * 1000);
+
     status = Client::Status::failed;
-    ui.print({1, 1}, {1, 20}, "Connection failed");
-    cstd::sleep(2);
+    ui.print({1, 1}, "Connection failed");
+    cstd::sleep(
+      config.get<int>("connectionFailedMessageDuration")
+    );
   }
 
   connecting.store(false);
@@ -150,7 +146,9 @@ int Client::connect() {
 
   status = Client::Status::authentification;
   ui.print({1, 1}, {1, 20}, "Connected!");
-  cstd::usleep(300 * 1000);
+  cstd::usleep(
+    config.get<int>("connectionSucceedMessageDuration") * 1000
+  );
   ui.clearWindow();
   return 0;
 }
@@ -188,47 +186,37 @@ void Client::listen() {
   refreshOutputThread.join();
 }
 
-void Client::parseMessage(const std::string& message) {
-  std::string temp;
-  for (auto &c : message) {
-    if (c == '\n' || temp.size() == ui.out.window.width - 8) {
-      data.insert(temp);
-      temp.clear();
-    }
-    if (c != '\n') {
-      temp.push_back(c);
-    }
-  }
-  if (!temp.empty()) {
-    data.insert(temp);
-  }
-}
-
 void Client::readServer() {
   while (run.load()) {
-    std::string message = socket.read();
+    std::string encoded = socket.read();
 
-    if (message.length() == 0) {
+    if (encoded.empty()) {
+      // Disconnected.
       run.store(false);
       return;
     }
 
-    Object object = encoder.decode(message);
+    Object object = encoder.decode(encoded);
     if (object.type == Object::Type::text) {
       bool scroll = (data.head == data.objects.begin());
+
       if (data.objects.empty()) {
         data.insert(object);
         scroll = false;
         update.store(true);
+
       } else if (object.hasReturnCode() && object.code == 4) {
         object.setPrev(data.objects.front().id);
         object.setId(data.objects.front().id);
         data.objects.push_front(object);
+
       } else if (object.prev == data.objects.front().id) {
         data.objects.push_front(object);
+
       } else if (object.id == data.objects.back().prev) {
         data.objects.push_back(object);
         scroll = false;
+
       }
       
       if (scroll) {
@@ -243,10 +231,18 @@ void Client::readUserInput() {
   chatspace = 1;
   while (run.load()) {
     drawChatPointer();
-    std::string command = ui.input({ui.out.window.height - 1 - chatspace, 4},
-       {chatspace, ui.out.window.width - 8}, true);
+    std::string command = ui.input(
+      {ui.getWindowHeight() - 1 - chatspace, 4},
+      {chatspace, ui.getWindowWidth() - 8}, 
+      true
+    );
 
-    ui.print({ui.out.window.height - 1 - chatspace, 4}, {chatspace, ui.getWindowWidth() - 4}, "");
+    ui.print(
+      {ui.getWindowHeight() - 1 - chatspace, 4}, 
+      {chatspace, ui.getWindowWidth() - 4}, 
+      ""
+    );
+
     chatspace = 1;
 
     if (command == "/quit") {
@@ -256,17 +252,9 @@ void Client::readUserInput() {
       return;
     }
 
-    if (command == "/up") {
-      scrollup();
-      continue;
-    }
-
-    if (command == "/down") {
-      scrolldown();
-      continue;
-    }
     if (command == "/refresh") {
       initializeGUI();
+      continue;
     }
 
     if (command[0] == '/') {
@@ -279,12 +267,6 @@ void Client::readUserInput() {
 
     sendText(command);
   }
-}
-
-void ObjectTree::insert(const std::string& text) {
-  Object object;
-  object.content = text;
-  insert(object);
 }
 
 void ObjectTree::insert(const Object& obj) {
@@ -304,8 +286,7 @@ ObjectTree::ObjectTree() {
 
 void Client::scrollup() {
   auto it = data.head;
-  ++it;
-  if (it != data.objects.end()) {
+  if (++it != data.objects.end()) {
     data.head = it;
     update.store(true);
   }
@@ -316,7 +297,7 @@ void Client::scrolldown() {
     data.head--;
     update.store(true);
   } else if (data.head != data.objects.end()) {
-    
+    // TODO
   }
 }
 
@@ -329,6 +310,15 @@ void Client::deallocateChatSpace() {
 }
 
 void Client::drawChatPointer() {
-  ui.print({ui.out.window.height - 2 - chatspace, 1}, {1, ui.getWindowWidth() - 2}, "");
-  ui.print({ui.out.window.height - 2 - chatspace, 2}, {chatspace + 2, 2}, "  >   ");
+  ui.print(
+    {ui.out.window.height - 2 - chatspace, 1}, 
+    {1, ui.getWindowWidth() - 2}, 
+    ""
+  );
+
+  ui.print(
+    {ui.out.window.height - 2 - chatspace, 2}, 
+    {chatspace + 2, 2},
+    "  >   "
+  );
 }

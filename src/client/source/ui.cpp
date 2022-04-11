@@ -38,7 +38,7 @@ output_t UserInterface::input(
         Cursor::Position pivot, Cursor::Position size, bool dynamic) {
 
   output_char_t c = 0;
-  //auto pos = cursor.position;
+  auto pos = cursor.position;
   cursor.moveTo(pivot);
   out.flush();
 
@@ -96,7 +96,7 @@ output_t UserInterface::input(
   in.buffer.moveLeftAll();
   output_t value = in.buffer.left;
   in.buffer.left.clear();
-  //cursor.moveTo(pos);
+  cursor.moveTo(pos);
   out.flush();
   return value;
 }
@@ -276,6 +276,7 @@ UserInterface::UserInterface(Client& client)
 }
 
 UserInterface::~UserInterface() {
+  cursor.moveTo({0, 0});
   system("stty cooked echo");
 }
 
