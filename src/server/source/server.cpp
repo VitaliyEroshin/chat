@@ -148,6 +148,7 @@ void Server::parseCommand(const Object& object, Connection& user) {
   Object callback;
   callback.type = Object::Type::text;
   callback.id = 0;
+  callback.setReturnCode(4);
 
   if (handlers.count(commandType)) {
     handlers[commandType](callback, user, ss);

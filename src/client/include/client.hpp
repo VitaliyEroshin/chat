@@ -50,9 +50,9 @@ private:
 
   void parseMessage(const std::string& message);
   
-  void readServer(std::atomic<bool>& update, std::atomic<bool>& run);
-  void readUserInput(std::atomic<bool>& update, std::atomic<bool>& run);
-  void refreshOutput(std::atomic<bool>& update, std::atomic<bool>& run);
+  void readServer();
+  void readUserInput();
+  void refreshOutput();
 
   void scrollup();
   void scrolldown();
@@ -62,6 +62,8 @@ private:
   void deallocateChatSpace();
 
   size_t chatspace = 1;
+  size_t cachesize = 5;
+  size_t commandsContained = 0;
 
   std::atomic<bool> run;
   std::atomic<bool> update;

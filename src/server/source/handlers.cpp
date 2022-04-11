@@ -124,17 +124,17 @@ void Server::getAboutHandler(Object& callback, Connection& user, std::stringstre
 
 void Server::addMessageHandler(Object& object, Connection& user, std::stringstream& ss) {
   chatid_t chat = storage.getChat(user.user);
+  log << "Received message from " << user.user << " with content \"" << object.content << "\"\n";
   object.setAuthor(user.user);
-  storage.addMessage(object, encoder, chat);
+  if (chat != 0) {
+    storage.addMessage(object, encoder, chat);
+  }
 
   for (auto &other : connections) {
-    if (other == user) {
-      continue;
-    }
     if (storage.getChat(other.user) != storage.getChat(user.user)) {
       continue;
     }
-
+    log << "Trying to send this to " << other.user << "\n";
     other.socket->send(encoder.encode(object));
   }
 }

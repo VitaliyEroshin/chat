@@ -321,21 +321,21 @@ void UserInterface::scrollChatUp() {
 
 void UserInterface::allocateChatSpace(Cursor::Position& pivot, Cursor::Position& size) {
   ++client.chatspace;
-  client.update.store(true);
   --pivot.x;
   ++size.x;
   auto pos = cursor.position;
   cursor.moveTo({pos.x, pivot.y});
   client.drawChatPointer();
   refreshInputBuffer(pivot, size);
+  client.update.store(true);
 }
 
 void UserInterface::deallocateChatSpace(Cursor::Position& pivot, Cursor::Position& size) {
   --client.chatspace;
-  client.update.store(true);
   ++pivot.x;
   --size.x;
   cursor.move(Cursor::Direction::down);
   client.drawChatPointer();
   refreshInputBuffer(pivot, size);
+  client.update.store(true);
 }

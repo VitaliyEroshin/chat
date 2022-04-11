@@ -75,7 +75,7 @@ void Client::sendText(const std::string& text) {
   Object object;
   object.content = text;
   object.type = Object::Type::text;
-  data.insert(object);
+  // data.insert(object);
   socket.send(encoder.encode(object));
 }
 
@@ -167,7 +167,7 @@ void Client::showBackground(std::atomic<bool>& connecting) {
   ui.clearWindow();
 }
 
-void Client::refreshOutput(std::atomic<bool>& update, std::atomic<bool>& run) {
+void Client::refreshOutput() {
   while (run.load()) {
     if (update.load()) {
       refreshMessages();
@@ -178,13 +178,12 @@ void Client::refreshOutput(std::atomic<bool>& update, std::atomic<bool>& run) {
 }
 
 void Client::listen() {
-  std::atomic<bool> run(true);
-  std::atomic<bool> update(false);
-
-  std::thread userInputThread(&Client::readUserInput, this, std::ref(update), std::ref(run));
-  std::thread serverReadThread(&Client::readServer, this, std::ref(update), std::ref(run));
-  std::thread refreshOutputThread(&Client::refreshOutput, this, std::ref(update), std::ref(run));
-
+  update.store(false);
+  run.store(true);
+  std::thread userInputThread(&Client::readUserInput, this);
+  std::thread serverReadThread(&Client::readServer, this);
+  std::thread refreshOutputThread(&Client::refreshOutput, this);
+  
   userInputThread.join();
   serverReadThread.join();
   refreshOutputThread.join();
@@ -206,7 +205,7 @@ void Client::parseMessage(const std::string& message) {
   }
 }
 
-void Client::readServer(std::atomic<bool>& update, std::atomic<bool>& run) {
+void Client::readServer() {
   while (run.load()) {
     std::string message = socket.read();
 
@@ -217,13 +216,31 @@ void Client::readServer(std::atomic<bool>& update, std::atomic<bool>& run) {
 
     Object object = encoder.decode(message);
     if (object.type == Object::Type::text) {
-      parseMessage(object.content);
+      bool scroll = (data.head == data.objects.begin());
+      if (data.objects.empty()) {
+        data.insert(object);
+        scroll = false;
+      } else if (object.hasReturnCode() && object.code == 4) {
+        object.setPrev(data.objects.front().id);
+        object.setId(data.objects.front().id);
+        data.objects.push_front(object);
+      } else if (object.prev == data.objects.front().id) {
+        data.objects.push_front(object);
+      } else if (object.id == data.objects.back().prev) {
+        data.objects.push_back(object);
+        scroll = false;
+      }
+      
+      if (scroll) {
+        scrolldown();
+      }
+      
       update.store(true);
     }
   }
 }
 
-void Client::readUserInput(std::atomic<bool>& update, std::atomic<bool>& run) {
+void Client::readUserInput() {
   while (run.load()) {
     drawChatPointer();
     std::string command = ui.input({ui.out.window.height - 1 - chatspace, 4},
@@ -261,7 +278,6 @@ void Client::readUserInput(std::atomic<bool>& update, std::atomic<bool>& run) {
     }
 
     sendText(command);
-    update.store(true);
   }
 }
 
@@ -299,6 +315,8 @@ void Client::scrolldown() {
   if (data.head != data.objects.begin()) {
     data.head--;
     update.store(true);
+  } else if (data.head != data.objects.end()) {
+    
   }
 }
 
