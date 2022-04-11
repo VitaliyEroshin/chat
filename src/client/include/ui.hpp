@@ -2,10 +2,13 @@
 #include <iostream>
 #include <string>
 #include <deque>
+#include <mutex>
 
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include "types.hpp"
+
+class Client;
 
 class UserInterface {
 public:
@@ -16,6 +19,7 @@ public:
     };
 
     Output();
+    ~Output() = default;
 
     Window window;
     std::ostream& out;
@@ -39,6 +43,8 @@ public:
 
     explicit Cursor(Output& output)
       : position({0, 0}), output(output) {};
+
+    ~Cursor() = default;
 
     void move(Direction direction);
 
@@ -72,14 +78,17 @@ public:
 
     Input(Output& output, Keyboard& keyboard)
       : output(output), keyboard(keyboard) {};
+    ~Input() = default;
   };
   
   Output out;
   Cursor cursor;
   Input in;
   Keyboard keyboard;
+  Client& client;
+  std::mutex printing;
 
-  UserInterface();
+  UserInterface(Client& client);
 
   ~UserInterface();
 
@@ -92,27 +101,25 @@ public:
   void print(Cursor::Position pivot, Cursor::Position size, const output_t& text);
   void print(Cursor::Position pivot, const output_t& text);
 
-  output_t input(Cursor::Position pivot, Cursor::Position size, size_t characterLimit = 256);
+  output_t input(Cursor::Position pivot, Cursor::Position size, bool dynamic = false);
   output_t askForm(Cursor::Position pivot, Cursor::Position size, const output_t& text);
 
 private:
   void processInputTab(Cursor::Position pivot, Cursor::Position end);
   void processInputArrow(Cursor::Position pivot, Cursor::Position end);
-  void processInputBackspace(Cursor::Position pivot, Cursor::Position end, Cursor::Position size);
+  void processInputBackspace(Cursor::Position& pivot, Cursor::Position end, Cursor::Position& size, bool dynamic);
   void refreshInputBuffer(Cursor::Position pivot, Cursor::Position size);
   void log(size_t cell, output_t s);
+
+  void scrollChatUp();
+  void scrollChatDown();
+
+  void allocateChatSpace(Cursor::Position& pivot, Cursor::Position& size);
+  void deallocateChatSpace(Cursor::Position& pivot, Cursor::Position& size);
 
 public:
   void clearWindow();
 
   size_t getWindowHeight() const { return out.window.height; };
   size_t getWindowWidth() const { return out.window.width; }
-
-  void scrollChatUp() {
-    // TODO
-  }
-
-  void scrollChatDown() {
-    // TODO
-  }
 };

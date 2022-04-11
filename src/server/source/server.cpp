@@ -87,17 +87,17 @@ void Server::selectDescriptor() {
 }
 
 void Server::parseQuery(const std::string& query, Connection& user) {
-  Object obj = encoder.decode(query);
-  if (obj.type == Object::Type::text) {
-    addMessage(obj, user);
+  Object object = encoder.decode(query);
+  if (object.type == Object::Type::text) {
+    addMessage(object, user);
     return;
   }
-  if (obj.type == Object::Type::loginAttempt) {
-    parseAuthData(obj, user);
+  if (object.type == Object::Type::loginAttempt) {
+    parseAuthData(object, user);
     return;
   }
-  if (obj.type == Object::Type::command) {
-    parseCommand(obj, user);
+  if (object.type == Object::Type::command) {
+    parseCommand(object, user);
     return;
   }
 }
@@ -107,12 +107,12 @@ void Server::parseAuthData(const Object& object, Connection& user) {
   std::string login;
   std::string password;
 
-  for (ptr = 0; ptr < object.message.size() && object.message[ptr] != 1; ++ptr) {
-    login.push_back(object.message[ptr]);
+  for (ptr = 0; ptr < object.content.size() && object.content[ptr] != 1; ++ptr) {
+    login.push_back(object.content[ptr]);
   }
 
-  for (ptr = ptr + 1; ptr < object.message.size(); ++ptr) {
-    password.push_back(object.message[ptr]);
+  for (ptr = ptr + 1; ptr < object.content.size(); ++ptr) {
+    password.push_back(object.content[ptr]);
   }
 
   Object callback;
@@ -121,17 +121,17 @@ void Server::parseAuthData(const Object& object, Connection& user) {
   int code = storage.getUser(login, password);
   
   if (code == -2) {
-    callback.ret = 2;
+    callback.code = 2;
     user.socket->send(encoder.encode(callback));
     return;
   }
   if (code == -1) {
     storage.addUser(login, password);
     code = storage.getUser(login, password);
-    callback.ret = 1;
+    callback.code = 1;
     user.socket->send(encoder.encode(callback));
   } else {
-    callback.ret = 0;
+    callback.code = 0;
     user.socket->send(encoder.encode(callback));
   }
   user.status = Server::Connection::Status::inmenu;
@@ -140,7 +140,7 @@ void Server::parseAuthData(const Object& object, Connection& user) {
 
 void Server::parseCommand(const Object& object, Connection& user) {
   std::stringstream ss;
-  ss << object.message;
+  ss << object.content;
 
   std::string commandType;
   ss >> commandType;
@@ -148,6 +148,7 @@ void Server::parseCommand(const Object& object, Connection& user) {
   Object callback;
   callback.type = Object::Type::text;
   callback.id = 0;
+  callback.setReturnCode(4);
 
   if (handlers.count(commandType)) {
     handlers[commandType](callback, user, ss);
@@ -157,16 +158,18 @@ void Server::parseCommand(const Object& object, Connection& user) {
 }
 
 void Server::addMessage(Object object, Connection& user) {
-  object.author = user.user;
-  object.message = "[" + storage.getUserNickname(user.user) + "] " + object.message;
-  for (auto &other : connections) {
-    if (other == user) {
-      continue;
-    }
-    if (storage.getChat(other.user) != storage.getChat(user.user)) {
-      continue;
-    }
+  std::stringstream ss;
+  addMessageHandler(object, user, ss);
+  // object.author = user.user;
+  // object.content = "[" + storage.getUserNickname(user.user) + "] " + object.content;
+  // for (auto &other : connections) {
+  //   if (other == user) {
+  //     continue;
+  //   }
+  //   if (storage.getChat(other.user) != storage.getChat(user.user)) {
+  //     continue;
+  //   }
 
-    other.socket->send(encoder.encode(object));
-  }
+  //   other.socket->send(encoder.encode(object));
+  // }
 }

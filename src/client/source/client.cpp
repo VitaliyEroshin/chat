@@ -4,15 +4,15 @@ Client::Client(Encoder& encoder, fs::Config& config)
     : status(Status::offline), 
       config(config), 
       socket(Socket(config.get<int>("port"))), 
-      ui(UserInterface()), 
+      ui(UserInterface(*this)), 
       encoder(encoder) 
-  {}
+{}
 
 bool Client::setAddress(std::string ip, int port) {
   socket.setAddress(port);
-  if (ip == "localhost") {
+  if (ip == "localhost")
     ip = "127.0.0.1";
-  }
+  
   return cstd::inet_pton(AF_INET, ip.c_str(), &(socket.address.sin_addr));
 }
 
@@ -21,9 +21,7 @@ void Client::setupAddress() {
   int port;
   try {
     port = std::stoi(ui.askForm({2, 1}, {1, 4}, "Enter the port: "));
-  } catch (...) {
-
-  }
+  } catch (...) {}
 
   while (!setAddress(ip, port)) {
     ui.print({1, 1}, {3, 30}, "");
@@ -32,9 +30,7 @@ void Client::setupAddress() {
     
     try {
       port = std::stoi(ui.askForm({2, 1}, {1, 4}, "Enter the port: "));
-    } catch (...) {
-      
-    }
+    } catch (...) {}
   }
   status = Status::connecting;
 }
@@ -47,23 +43,22 @@ int Client::auth() {
   std::string username = ui.askForm({1, 1}, {1, 12}, "Username: ");
   std::string password = ui.askForm({2, 1}, {1, 12}, "Password: ");
 
-  Object obj;
-  obj.type = Object::Type::loginAttempt;
-  obj.message += username;
-  obj.message.push_back(1);
-  obj.message += password;
+  Object object;
+  object.type = Object::Type::loginAttempt;
+  object.content += username;
+  object.content.push_back(1);
+  object.content += password;
 
-  socket.send(encoder.encode(obj));
+  socket.send(encoder.encode(object));
 
   std::string query = socket.read();
+  object = encoder.decode(query);
 
-  obj = encoder.decode(query);
-
-  if (obj.ret == 0) {
+  if (object.code == 0) {
     ui.print({4, 1}, "Logged in!");
-  } else if (obj.ret == 1) {
+  } else if (object.code == 1) {
     ui.print({4, 1}, "Created new user!");
-  } else if (obj.ret == 2) {
+  } else if (object.code == 2) {
     ui.print({4, 1}, "Wrong password");
     return -1;
   }
@@ -72,49 +67,51 @@ int Client::auth() {
 }
 
 void Client::sendText(const std::string& text) {
-  Object obj;
-  obj.message = text;
-  obj.type = Object::Type::text;
-  obj.id = 1555;
-  std::string en = encoder.encode(obj);
-  data.insert(obj.message);
-  socket.send(en);
+  Object object;
+  object.content = text;
+  object.type = Object::Type::text;
+  socket.send(encoder.encode(object));
 }
 
 void Client::sendCommand(const std::string& text) {
-  Object obj;
-  obj.message = text;
-  obj.type = Object::Type::command;
-  std::string en = encoder.encode(obj);
-  socket.send(en);
+  Object object;
+  object.content = text;
+  object.type = Object::Type::command;
+  socket.send(encoder.encode(object));
 }
 
 
 void Client::initializeGUI() {
   ui.clearWindow();
-  ui.print({ui.out.window.height - 2, 2}, "> ");
+}
+
+int ceil(int a, int b) {
+  return (a + b - 1) / b;
 }
 
 void Client::refreshMessages() {
-  ui.print({1, 1}, {ui.out.window.height - 3, ui.out.window.width - 2}, "");
+  size_t space = ui.getWindowHeight() - 3 - chatspace;
+  size_t width = ui.getWindowWidth() - 2;
+  ui.print({1, 1}, {space, width}, "");
   auto it = data.head;
-  for (int i = 0; i < ui.out.window.height - 4; ++i) {
-    ui.print({ui.out.window.height - 3 - i, 2}, (*it).message);
-    if (it == data.objects.begin()) {
-      break;
-    }
-    --it;
+
+  while (it != data.objects.end()) {
+    size_t height = ceil((*it).content.size(), width - 2);
+    if (space < height)
+      return;
+
+    ui.print({space - height + 1, 1}, {height, width - 2}, (*it).content);
+    space -= height;
+    ++it;
   }
 }
 
 int Client::session() {
-  if (connect() < 0) {
+  if (connect() < 0)
     return -1;
-  }
 
-  if (auth() < 0) {
+  if (auth() < 0)
     return -1;
-  }
 
   initializeGUI();
   listen();
@@ -128,12 +125,17 @@ int Client::connect() {
   std::thread background(&Client::showBackground, this, std::ref(connecting));
 
   if (connectToHost() < 0) {
-    cstd::sleep(2);
+    cstd::sleep(
+      config.get<int>("connectionBackgroundDuration")
+    );
+
     connecting.store(false);
-    cstd::usleep(500 * 1000);
+
     status = Client::Status::failed;
-    ui.print({1, 1}, {1, 20}, "Connection failed");
-    cstd::sleep(2);
+    ui.print({1, 1}, "Connection failed");
+    cstd::sleep(
+      config.get<int>("connectionFailedMessageDuration")
+    );
   }
 
   connecting.store(false);
@@ -144,7 +146,9 @@ int Client::connect() {
 
   status = Client::Status::authentification;
   ui.print({1, 1}, {1, 20}, "Connected!");
-  cstd::usleep(300 * 1000);
+  cstd::usleep(
+    config.get<int>("connectionSucceedMessageDuration") * 1000
+  );
   ui.clearWindow();
   return 0;
 }
@@ -160,7 +164,7 @@ void Client::showBackground(std::atomic<bool>& connecting) {
   ui.clearWindow();
 }
 
-void Client::refreshOutput(std::atomic<bool>& update, std::atomic<bool>& run) {
+void Client::refreshOutput() {
   while (run.load()) {
     if (update.load()) {
       refreshMessages();
@@ -171,56 +175,76 @@ void Client::refreshOutput(std::atomic<bool>& update, std::atomic<bool>& run) {
 }
 
 void Client::listen() {
-  std::atomic<bool> run(true);
-  std::atomic<bool> update(false);
-
-  std::thread userInputThread(&Client::readUserInput, this, std::ref(update), std::ref(run));
-  std::thread serverReadThread(&Client::readServer, this, std::ref(update), std::ref(run));
-  std::thread refreshOutputThread(&Client::refreshOutput, this, std::ref(update), std::ref(run));
-
+  update.store(false);
+  run.store(true);
+  std::thread userInputThread(&Client::readUserInput, this);
+  std::thread serverReadThread(&Client::readServer, this);
+  std::thread refreshOutputThread(&Client::refreshOutput, this);
+  
   userInputThread.join();
   serverReadThread.join();
   refreshOutputThread.join();
 }
 
-void Client::parseMessage(const std::string& message) {
-  std::string temp;
-  for (auto &c : message) {
-    if (c == '\n' || temp.size() == ui.out.window.width - 8) {
-      data.insert(temp);
-      temp.clear();
-    }
-    if (c != '\n') {
-      temp.push_back(c);
-    }
-  }
-  if (!temp.empty()) {
-    data.insert(temp);
-  }
-}
-
-void Client::readServer(std::atomic<bool>& update, std::atomic<bool>& run) {
+void Client::readServer() {
   while (run.load()) {
-    std::string message = socket.read();
+    std::string encoded = socket.read();
 
-    if (message.length() == 0) {
+    if (encoded.empty()) {
+      // Disconnected.
       run.store(false);
       return;
     }
 
-    Object obj = encoder.decode(message);
-    if (obj.type == Object::Type::text) {
-      parseMessage(obj.message);
-      update.store(true);
+    Object object = encoder.decode(encoded);
+    if (object.type == Object::Type::text) {
+      bool scroll = (data.head == data.objects.begin());
+
+      if (data.objects.empty()) {
+        data.insert(object);
+        scroll = false;
+        update.store(true);
+
+      } else if (object.hasReturnCode() && object.code == 4) {
+        object.setPrev(data.objects.front().id);
+        object.setId(data.objects.front().id);
+        data.objects.push_front(object);
+
+      } else if (object.prev == data.objects.front().id) {
+        data.objects.push_front(object);
+
+      } else if (object.id == data.objects.back().prev) {
+        data.objects.push_back(object);
+        scroll = false;
+
+      }
+      
+      if (scroll) {
+        scrolldown();
+        update.store(true);
+      }
     }
   }
 }
 
-void Client::readUserInput(std::atomic<bool>& update, std::atomic<bool>& run) {
+void Client::readUserInput() {
+  chatspace = 1;
   while (run.load()) {
-    std::string command = ui.input({ui.out.window.height - 2, 4}, {1, ui.out.window.width - 8});
+    drawChatPointer();
+    std::string command = ui.input(
+      {ui.getWindowHeight() - 1 - chatspace, 4},
+      {chatspace, ui.getWindowWidth() - 8}, 
+      true
+    );
 
-    ui.print({ui.out.window.height - 2, 2}, {1, ui.out.window.width - 8}, "> ");
+    ui.print(
+      {ui.getWindowHeight() - 1 - chatspace, 4}, 
+      {chatspace, ui.getWindowWidth() - 4}, 
+      ""
+    );
+
+    chatspace = 1;
+
     if (command == "/quit") {
       ui.~UserInterface();
       run.store(false);
@@ -230,6 +254,7 @@ void Client::readUserInput(std::atomic<bool>& update, std::atomic<bool>& run) {
 
     if (command == "/refresh") {
       initializeGUI();
+      continue;
     }
 
     if (command[0] == '/') {
@@ -241,19 +266,59 @@ void Client::readUserInput(std::atomic<bool>& update, std::atomic<bool>& run) {
     }
 
     sendText(command);
+  }
+}
+
+void ObjectTree::insert(const Object& obj) {
+  if (head == objects.end()) {
+    objects.push_back(obj);
+    head = objects.begin();
+  } else {
+    auto it = head;
+    objects.insert(it, obj);
+    --head;
+  }
+}
+
+ObjectTree::ObjectTree() {
+  head = objects.begin();
+}
+
+void Client::scrollup() {
+  auto it = data.head;
+  if (++it != data.objects.end()) {
+    data.head = it;
     update.store(true);
   }
 }
 
-void ObjectTree::insert(const std::string& text) {
-  Object obj;
-  obj.message = text;
-  objects.insert(head, obj);
+void Client::scrolldown() {
+  if (data.head != data.objects.begin()) {
+    data.head--;
+    update.store(true);
+  } else if (data.head != data.objects.end()) {
+    // TODO
+  }
 }
 
-ObjectTree::ObjectTree() {
-  Object empty;
-  empty.message = "";
-  objects.push_back(empty);
-  head = objects.begin();
+void Client::allocateChatSpace() {
+
+}
+
+void Client::deallocateChatSpace() {
+
+}
+
+void Client::drawChatPointer() {
+  ui.print(
+    {ui.out.window.height - 2 - chatspace, 1}, 
+    {1, ui.getWindowWidth() - 2}, 
+    ""
+  );
+
+  ui.print(
+    {ui.out.window.height - 2 - chatspace, 2}, 
+    {chatspace + 2, 2},
+    "  >   "
+  );
 }
