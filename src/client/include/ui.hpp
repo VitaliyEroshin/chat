@@ -101,13 +101,13 @@ public:
   void print(Cursor::Position pivot, Cursor::Position size, const output_t& text);
   void print(Cursor::Position pivot, const output_t& text);
 
-  output_t input(Cursor::Position pivot, Cursor::Position size, size_t characterLimit = 256);
+  output_t input(Cursor::Position pivot, Cursor::Position size, bool dynamic = false);
   output_t askForm(Cursor::Position pivot, Cursor::Position size, const output_t& text);
 
 private:
   void processInputTab(Cursor::Position pivot, Cursor::Position end);
   void processInputArrow(Cursor::Position pivot, Cursor::Position end);
-  void processInputBackspace(Cursor::Position& pivot, Cursor::Position end, Cursor::Position& size);
+  void processInputBackspace(Cursor::Position& pivot, Cursor::Position end, Cursor::Position& size, bool dynamic);
   void refreshInputBuffer(Cursor::Position pivot, Cursor::Position size);
   void log(size_t cell, output_t s);
 

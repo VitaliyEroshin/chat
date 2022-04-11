@@ -35,10 +35,10 @@ void UserInterface::log(size_t cell, output_t s) {
 }
 
 output_t UserInterface::input(
-        Cursor::Position pivot, Cursor::Position size, size_t characterLimit) {
+        Cursor::Position pivot, Cursor::Position size, bool dynamic) {
 
   output_char_t c = 0;
-  auto pos = cursor.position;
+  //auto pos = cursor.position;
   cursor.moveTo(pivot);
   out.flush();
 
@@ -57,13 +57,17 @@ output_t UserInterface::input(
     }
 
     if (UserInterface::Keyboard::isBackspace(c)) {
-      processInputBackspace(pivot, end, size);
+      processInputBackspace(pivot, end, size, dynamic);
       continue;
     }
 
     if (cursor.position.y == pivot.y + size.y) {
-      allocateChatSpace(pivot, size);
-      continue;
+      if (dynamic) {
+        allocateChatSpace(pivot, size);
+        continue;
+      } else if (in.buffer.right.size() + in.buffer.left.size() == size.x * size.y) {
+        continue;
+      }
     }
     
     if (!std::isalnum(c) && !std::ispunct(c) && !std::isblank(c)) {
@@ -92,7 +96,7 @@ output_t UserInterface::input(
   in.buffer.moveLeftAll();
   output_t value = in.buffer.left;
   in.buffer.left.clear();
-  cursor.moveTo(pos);
+  //cursor.moveTo(pos);
   out.flush();
   return value;
 }
@@ -110,6 +114,7 @@ void UserInterface::processInputTab(Cursor::Position pivot, Cursor::Position end
 void UserInterface::processInputArrow(Cursor::Position pivot, Cursor::Position end) {
   getchar();
   auto direction = UserInterface::Cursor::getDirection(getchar());
+  std::lock_guard<std::mutex> lock(printing);
   if (direction == Cursor::Direction::left) {
     if (cursor.position == pivot || in.buffer.left.empty())
       return;
@@ -163,7 +168,7 @@ void UserInterface::refreshInputBuffer(Cursor::Position pivot, Cursor::Position 
   print(pivot, size, buffer);
 }
 
-void UserInterface::processInputBackspace(Cursor::Position& pivot, Cursor::Position end, Cursor::Position& size) {
+void UserInterface::processInputBackspace(Cursor::Position& pivot, Cursor::Position end, Cursor::Position& size, bool dynamic) {
   if (cursor.position == pivot) {
     return;
   }
@@ -174,7 +179,8 @@ void UserInterface::processInputBackspace(Cursor::Position& pivot, Cursor::Posit
   } else {
     cursor.move(Cursor::Direction::left);
   }
-  if (cursor.position.y == end.y) {
+
+  if (dynamic && cursor.position.y == end.y) {
     deallocateChatSpace(pivot, size);
   }
   

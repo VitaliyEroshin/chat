@@ -126,8 +126,11 @@ void Server::addMessageHandler(Object& object, Connection& user, std::stringstre
   chatid_t chat = storage.getChat(user.user);
   log << "Received message from " << user.user << " with content \"" << object.content << "\"\n";
   object.setAuthor(user.user);
+  object.content = "[" + storage.getUserNickname(user.user) + "] " + object.content;
   if (chat != 0) {
     storage.addMessage(object, encoder, chat);
+  } else {
+    object.setReturnCode(4);
   }
 
   for (auto &other : connections) {

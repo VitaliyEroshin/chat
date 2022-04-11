@@ -89,7 +89,6 @@ void Client::sendCommand(const std::string& text) {
 
 void Client::initializeGUI() {
   ui.clearWindow();
-  // ui.print({ui.out.window.height - 2, 2}, "> ");
 }
 
 int ceil(int a, int b) {
@@ -97,7 +96,7 @@ int ceil(int a, int b) {
 }
 
 void Client::refreshMessages() {
-  size_t space = ui.getWindowHeight() - 2 - chatspace;
+  size_t space = ui.getWindowHeight() - 3 - chatspace;
   size_t width = ui.getWindowWidth() - 2;
   ui.print({1, 1}, {space, width}, "");
   auto it = data.head;
@@ -108,7 +107,7 @@ void Client::refreshMessages() {
     if (space < height)
       return;
 
-    ui.print({space - height, 1}, {height, width - 2}, (*it).content);
+    ui.print({space - height + 1, 1}, {height, width - 2}, (*it).content);
     space -= height;
     ++it;
   }
@@ -220,6 +219,7 @@ void Client::readServer() {
       if (data.objects.empty()) {
         data.insert(object);
         scroll = false;
+        update.store(true);
       } else if (object.hasReturnCode() && object.code == 4) {
         object.setPrev(data.objects.front().id);
         object.setId(data.objects.front().id);
@@ -233,18 +233,18 @@ void Client::readServer() {
       
       if (scroll) {
         scrolldown();
+        update.store(true);
       }
-      
-      update.store(true);
     }
   }
 }
 
 void Client::readUserInput() {
+  chatspace = 1;
   while (run.load()) {
     drawChatPointer();
     std::string command = ui.input({ui.out.window.height - 1 - chatspace, 4},
-       {chatspace, ui.out.window.width - 8});
+       {chatspace, ui.out.window.width - 8}, true);
 
     ui.print({ui.out.window.height - 1 - chatspace, 4}, {chatspace, ui.getWindowWidth() - 4}, "");
     chatspace = 1;
@@ -329,5 +329,6 @@ void Client::deallocateChatSpace() {
 }
 
 void Client::drawChatPointer() {
+  ui.print({ui.out.window.height - 2 - chatspace, 1}, {1, ui.getWindowWidth() - 2}, "");
   ui.print({ui.out.window.height - 2 - chatspace, 2}, {chatspace + 2, 2}, "  >   ");
 }
