@@ -96,12 +96,16 @@ void Client::refreshMessages() {
   auto it = data.head;
 
   while (it != data.objects.end()) {
-    size_t height = ceil((*it).content.size(), width - 2);
-    if (space < height)
-      return;
+    std::stringstream ss((*it).content);
+    std::string s;
+    while (std::getline(ss, s)) {
+      size_t height = ceil(s.size(), width - 2);
+      if (space < height)
+        return;
 
-    ui.print({space - height + 1, 1}, {height, width - 2}, (*it).content);
-    space -= height;
+      ui.print({space - height + 1, 1}, {height, width - 2}, s);
+      space -= height;
+    }
     ++it;
   }
 }
