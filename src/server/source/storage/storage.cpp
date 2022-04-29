@@ -3,24 +3,33 @@
 #include <sstream>
 #include <filesystem>
 
+void SmartStorage::addModule(const std::string& alias, size_t lruSize) {
+  data.emplace(
+    std::piecewise_construct,
+    std::forward_as_tuple(alias),
+    std::forward_as_tuple(2, config.get<std::string>(alias + "Path"))
+  );
+}
+
 SmartStorage::SmartStorage(const std::string& configPath, Logger& logger)
     : log(logger),
-      config(logger, configPath),
-      users(2, config.get<std::string>("userAuthDataPath")),
-      userdata(2, config.get<std::string>("userDataPath")),
-      friends(2, config.get<std::string>("friendsDataPath")),
-      chats(2, config.get<std::string>("chatsDataPath")),
-      availableChats(2, config.get<std::string>("availableChatsDataPath")),
-      messages(2, config.get<std::string>("messagesDataPath")),
-      messagechatid(2, config.get<std::string>("messageChatIdDataPath"))
+      config(logger, configPath)
 {
-  std::filesystem::create_directories(config.get<std::string>("userAuthDataPath"));
-  std::filesystem::create_directories(config.get<std::string>("userDataPath"));
-  std::filesystem::create_directories(config.get<std::string>("friendsDataPath"));
-  std::filesystem::create_directories(config.get<std::string>("chatsDataPath"));
-  std::filesystem::create_directories(config.get<std::string>("availableChatsDataPath"));
-  std::filesystem::create_directories(config.get<std::string>("messagesDataPath"));
-  std::filesystem::create_directories(config.get<std::string>("messageChatIdDataPath"));
+  const size_t lruSize = 2;
+
+  std::vector<std::string> modules = {
+    "users",
+    "userdata",
+    "friends",
+    "chats",
+    "availableChats",
+    "messages",
+    "messagechatid"
+  };
+
+  for (auto& module : modules) {
+    addModule(module, lruSize);
+  }
 }
 
 bool isPrefix(const std::string& s, const std::string& prefix) {
@@ -36,7 +45,7 @@ std::string getPrefix(const std::string& s, size_t length) {
 }
 
 int SmartStorage::getUser(const login_t& login, const password_t& password) {
-  Block& block = users[getPrefix(login, 1)];
+  Block& block = data["users"][getPrefix(login, 1)];
   
   for (size_t i = 0; i < block.size(); ++i) {
     if (!isPrefix(block[i], login + " ")) {
@@ -66,7 +75,7 @@ int SmartStorage::getUserCount() {
     userCount = 0;
     return 0;
   }
-  Block& block = userdata[blocksCount - 1];
+  Block& block = data["userdata"][blocksCount - 1];
   std::stringstream ss(block[block.size()]);
   std::string id;
   ss >> id;
@@ -89,13 +98,13 @@ int SmartStorage::addUser(const login_t& login, const password_t& password) {
   }
 
   userid_t id = getUserCount() + 1;
-  Block& block = users[getPrefix(login, 1)];
+  Block& block = data["users"][getPrefix(login, 1)];
   std::string s = login + " " + password + " " + std::to_string(id);
   block.add(s);
   block.save(config.get<std::string>("userAuthDataPath") + getPrefix(login, 1));
 
   int blockId = getUserDataBlock(id);
-  Block& dataBlock = userdata[blockId];
+  Block& dataBlock = data["userdata"][blockId];
   s = std::to_string(id) + " " + login;
   dataBlock.add(s);
   ++userCount;
@@ -124,13 +133,13 @@ bool SmartStorage::isMember(Block& block, userid_t member) {
 }
 
 bool SmartStorage::isMember(chatid_t chat, userid_t member) {
-  Block& block = chats[std::to_string(chat)];
+  Block& block = data["chats"][std::to_string(chat)];
   return isMember(block, member);
 }
 
 int SmartStorage::createChat(userid_t creator) {
   chatid_t id = getChatsCount() + 1;
-  Block& block = chats[std::to_string(id)];
+  Block& block = data["chats"][std::to_string(id)];
   block[0] = " " + std::to_string(creator) + " ";
   block[1] = "0";
   block.save();
@@ -140,7 +149,7 @@ int SmartStorage::createChat(userid_t creator) {
 }
 
 void SmartStorage::addAvailableChat(userid_t id, chatid_t chat) {
-  Block& block = availableChats[getUserDataBlock(id)];
+  Block& block = data["availableChats"][getUserDataBlock(id)];
   block[getUserDataBlockPosition(id)] += std::to_string(chat) + " ";
   block.block_size = std::max(block.size(), static_cast<size_t>(getUserDataBlockPosition(id) + 1));
   block.save();
@@ -155,7 +164,7 @@ int SmartStorage::inviteToChat(userid_t selfId, userid_t target, chatid_t chat) 
     return -1;
   }
 
-  Block& block = chats[std::to_string(chat)];
+  Block& block = data["chats"][std::to_string(chat)];
   if (!isMember(block, selfId)) {
     return -2;
   }
@@ -196,7 +205,7 @@ int SmartStorage::setUserChat(userid_t id, chatid_t chat) {
 }
 
 std::vector<chatid_t> SmartStorage::getUserChats(userid_t id) {
-  Block& block = availableChats[getUserDataBlock(id)];
+  Block& block = data["availableChats"][getUserDataBlock(id)];
   std::stringstream ss(block[getUserDataBlockPosition(id)]);
   std::string chatId;
 
@@ -208,7 +217,7 @@ std::vector<chatid_t> SmartStorage::getUserChats(userid_t id) {
 }
   
 std::vector<userid_t> SmartStorage::getUserFriends(userid_t id) {
-  Block& block = friends[getUserDataBlock(id)];
+  Block& block = data["friends"][getUserDataBlock(id)];
   std::stringstream ss(block[getUserDataBlockPosition(id)]);
   std::string friendId;
 
@@ -228,7 +237,7 @@ int SmartStorage::addFriend(userid_t selfId, userid_t target) {
     return -1;
   }
 
-  Block& block = friends[getUserDataBlock(selfId)];
+  Block& block = data["friends"][getUserDataBlock(selfId)];
   std::string& s = block[getUserDataBlockPosition(selfId)];
 
   if (isFriend(s, target)) {
@@ -246,7 +255,7 @@ int SmartStorage::addFriend(userid_t selfId, userid_t target) {
 }
 
 std::string SmartStorage::getUserNickname(userid_t id) {
-  Block& block = userdata[getUserDataBlock(id)];
+  Block& block = data["userdata"][getUserDataBlock(id)];
   std::stringstream ss(block[getUserDataBlockPosition(id)]);
   std::string value;
   ss >> value;
@@ -266,7 +275,7 @@ int SmartStorage::getMessageCount() {
     messageCount = 0;
     return 0;
   }
-  Block& block = messages[blocksCount - 1];
+  Block& block = data["messages"][blocksCount - 1];
   std::stringstream ss(block[block.size() - 1]);
   std::string id;
   ss >> id;
@@ -288,19 +297,19 @@ void SmartStorage::setMessage(Object object, Encoder& encoder, chatid_t chatid) 
     ++messageCount;
   }
 
-  Block& block = messages[getMessageBlock(object.id)];
+  Block& block = data["messages"][getMessageBlock(object.id)];
   std::string& s = block[getMessageBlockPosition(object.id)];
   s = encoder.encode(object);
   block.save();
 
-  Block& idblock = messagechatid[getMessageBlock(object.id)];
+  Block& idblock = data["messagechatid"][getMessageBlock(object.id)];
   std::string& sid = idblock[getMessageBlockPosition(object.id)];
   sid = std::to_string(chatid);
   idblock.save();
 }
 
 void SmartStorage::addMessage(Object object, Encoder& encoder, chatid_t chatid) {
-  Block& block = chats[std::to_string(chatid)];
+  Block& block = data["chats"][std::to_string(chatid)];
   int prev = std::stoi(block[1]);
   
   object.setPrev(prev);
@@ -319,7 +328,7 @@ void SmartStorage::addMessage(Object object, Encoder& encoder, chatid_t chatid) 
 }
 
 Object SmartStorage::getMessage(int id, Encoder& encoder) {
-  Block& block = messages[getMessageBlock(id)];
+  Block& block = data["messages"][getMessageBlock(id)];
   std::string& s = block[getMessageBlockPosition(id)];
   if (s.empty()) {
     Object object;
@@ -331,13 +340,13 @@ Object SmartStorage::getMessage(int id, Encoder& encoder) {
 }
 
 Object SmartStorage::getLastMessage(Encoder& encoder, chatid_t chatid) {
-  Block& block = chats[std::to_string(chatid)];
+  Block& block = data["chats"][std::to_string(chatid)];
   int id = std::stoi(block[1]);
   return getMessage(id, encoder);
 }
 
 chatid_t SmartStorage::getMessageChatid(int id) {
-  Block& block = messagechatid[getMessageBlock(id)];
+  Block& block = data["messagechatid"][getMessageBlock(id)];
   std::string& s = block[getMessageBlockPosition(id)];
   if (s.empty()) {
     Object object;
