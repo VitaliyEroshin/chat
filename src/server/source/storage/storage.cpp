@@ -241,7 +241,7 @@ int SmartStorage::addFriend(userid_t selfId, userid_t target) {
   std::string& s = block[getUserDataBlockPosition(selfId)];
 
   if (isFriend(s, target)) {
-    return 0;
+    return -2;
   }
   if (s.empty()) {
     s.push_back(' ');

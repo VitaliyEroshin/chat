@@ -122,19 +122,25 @@ void Server::parseAuthData(const Object& object, Connection& user) {
   Object callback;
   callback.type = Object::Type::returnCode;
 
+  const int 
+    kOk = 0,
+    kSignedUp = 1,
+    kWrongPassword = 2;
+
+
   switch (storage.getUser(login, password)) {
     case -2:
-      callback.code = 2;
+      callback.code = kWrongPassword;
       break;
 
     case -1:
-      callback.code = 1;
+      callback.code = kSignedUp;
       user.user = storage.addUser(login, password);
       user.status = Server::Connection::Status::inmenu;
       break;
 
     default:
-      callback.code = 0;
+      callback.code = kOk;
       user.status = Server::Connection::Status::inmenu;
   }
 
@@ -150,8 +156,10 @@ void Server::parseCommand(const Object& object, Connection& user) {
 
   Object callback;
   callback.type = Object::Type::text;
-  callback.id = 0;
-  callback.setReturnCode(4);
+  callback.setId(0);
+
+  const int kCommandCallback = 4;
+  callback.setReturnCode(kCommandCallback);
 
   if (handlers.count(commandType)) {
     handlers[commandType](callback, user, ss);

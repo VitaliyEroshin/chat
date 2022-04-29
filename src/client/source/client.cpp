@@ -282,6 +282,9 @@ void Client::listen() {
 }
 
 void Client::readServer() {
+  const int
+    kCommandCallback = 4;
+
   while (run.load()) {
     std::string encoded = socket.read();
 
@@ -300,7 +303,7 @@ void Client::readServer() {
         scroll = false;
         update.store(true);
 
-      } else if (object.hasReturnCode() && object.code == 4) {
+      } else if (object.hasReturnCode() && object.code == kCommandCallback) {
         object.setPrev(data.objects.front().id);
         object.setId(data.objects.front().id);
         data.objects.push_front(object);

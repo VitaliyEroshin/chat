@@ -23,11 +23,23 @@ void Server::addHandler(const std::string& command, Handler handler) {
 void Server::addFriendHandler(Object& callback, Connection& user, std::stringstream& ss) {
   userid_t target;
   ss >> target;
-  int code = storage.addFriend(user.user, target);
 
-  if (code == -1) {
-    callback.content = "No such user found";
-  }
+  switch (storage.addFriend(user.user, target)) {
+    case 0:
+      callback.content = "Success";
+      break;
+
+    case -1:
+      callback.content = "No such user found";
+      break;
+
+    case -2:
+      callback.content = "User is already in your friendlist";
+      break;
+
+    default:
+      callback.content = "Internal server error";
+  };
 }
 
 void Server::getSelfIdHandler(Object& callback, Connection& user, std::stringstream& ss) {
