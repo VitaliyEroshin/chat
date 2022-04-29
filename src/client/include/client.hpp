@@ -37,7 +37,12 @@ private:
   
   void setupAddress();
   int connectToHost();
+  
+  std::pair<std::string, std::string> askAuthData();
+  Object makeAuthAttempt(const std::string& username, const std::string& password);
+  int printAuthResult(int code);
   int auth();
+  
   void initializeGUI();
   void refreshMessages();
   void sendText(const std::string& text);

@@ -39,31 +39,83 @@ int Client::connectToHost() {
   return cstd::connect(socket.descriptor, (cstd::sockaddr*)&(socket.address), sizeof(socket.address));
 }
 
-int Client::auth() {
-  std::string username = ui.askForm({1, 1}, {1, 12}, "Username: ");
-  std::string password = ui.askForm({2, 1}, {1, 12}, "Password: ");
+std::pair<std::string, std::string> Client::askAuthData() {
+  // H - for horizontal, V - for vertical
+  const size_t 
+    usernameOffsetH = 1,
+    usernameOffsetV = 1,
+    usernameBoxH = 12,
+    usernameBoxV = 1;
 
+  std::string username = ui.askForm(
+    {usernameOffsetV, usernameOffsetH}, 
+    {usernameBoxV, usernameBoxH},
+     "Username: "
+  );
+
+  const size_t
+    passwordOffsetH = 1,
+    passwordOffsetV = 1,
+    passwordBoxH = 12,
+    passwordBoxV = 1;
+
+  std::string password = ui.askForm(
+    {usernameOffsetV + passwordOffsetV, passwordOffsetH}, 
+    {passwordBoxV, passwordBoxH}, 
+    "Password: "
+  );
+
+  return std::make_pair(username, password);
+}
+
+Object Client::makeAuthAttempt(const std::string& username, const std::string& password) {
+  const char splitter = 1;
   Object object;
   object.type = Object::Type::loginAttempt;
   object.content += username;
-  object.content.push_back(1);
+  object.content.push_back(splitter);
   object.content += password;
+  return object;
+}
 
-  socket.send(encoder.encode(object));
+int Client::printAuthResult(int code) {
+  const size_t
+    resultOffsetH = 1,
+    resultOffsetV = 4;
 
-  std::string query = socket.read();
-  object = encoder.decode(query);
+  auto printResult = [this] (const std::string& message) {
+    ui.print(
+      {resultOffsetV, resultOffsetV},
+      message
+    );
+  };
 
-  if (object.code == 0) {
-    ui.print({4, 1}, "Logged in!");
-  } else if (object.code == 1) {
-    ui.print({4, 1}, "Created new user!");
-  } else if (object.code == 2) {
-    ui.print({4, 1}, "Wrong password");
-    return -1;
+  switch (code) {
+    case 0:
+      printResult("Logged in!");
+      break;
+
+    case 1:
+      printResult("Created new user!");
+      break;
+
+    case 2:
+      printResult("Wrong password");
+      return -1;
   }
 
   return 0;
+}
+
+int Client::auth() {
+  auto [username, password] = askAuthData();
+  auto attempt = makeAuthAttempt(username, password);
+  socket.send(encoder.encode(attempt));
+
+  std::string query = socket.read();
+  attempt = encoder.decode(query);
+
+  return printAuthResult(attempt.code);
 }
 
 void Client::sendText(const std::string& text) {
