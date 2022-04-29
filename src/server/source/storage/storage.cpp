@@ -68,7 +68,7 @@ int SmartStorage::getUserCount() {
   if (userCount != -1) {
     return userCount;
   }
-  std::string path = config.get<std::string>("userDataPath");
+  std::string path = config.get<std::string>("userdataPath");
   
   int blocksCount = fs::getFileCount(path);
   if (blocksCount == 0) {
@@ -101,14 +101,14 @@ int SmartStorage::addUser(const login_t& login, const password_t& password) {
   Block& block = data["users"][getPrefix(login, 1)];
   std::string s = login + " " + password + " " + std::to_string(id);
   block.add(s);
-  block.save(config.get<std::string>("userAuthDataPath") + getPrefix(login, 1));
+  block.save(config.get<std::string>("usersPath") + getPrefix(login, 1));
 
   int blockId = getUserDataBlock(id);
   Block& dataBlock = data["userdata"][blockId];
   s = std::to_string(id) + " " + login;
   dataBlock.add(s);
   ++userCount;
-  dataBlock.save(config.get<std::string>("userDataPath") + std::to_string(blockId));
+  dataBlock.save(config.get<std::string>("userdataPath") + std::to_string(blockId));
   return id;
 }
 
@@ -116,7 +116,7 @@ int SmartStorage::getChatsCount() {
   if (chatCount != -1) {
     return chatCount;
   }
-  std::string path = config.get<std::string>("chatsDataPath");
+  std::string path = config.get<std::string>("chatsPath");
   
   int blocksCount = fs::getFileCount(path);
   if (blocksCount == 0) {
@@ -268,7 +268,7 @@ int SmartStorage::getMessageCount() {
     return messageCount;
   }
 
-  std::string path = config.get<std::string>("messagesDataPath");
+  std::string path = config.get<std::string>("messagesPath");
   
   int blocksCount = fs::getFileCount(path);
   if (blocksCount == 0) {

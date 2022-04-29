@@ -102,40 +102,43 @@ void Server::parseQuery(const std::string& query, Connection& user) {
   }
 }
 
-void Server::parseAuthData(const Object& object, Connection& user) {
+std::pair<std::string, std::string> splitAuthData(const std::string& content) {
+  std::string login, password;
   int ptr;
-  std::string login;
-  std::string password;
-
-  for (ptr = 0; ptr < object.content.size() && object.content[ptr] != 1; ++ptr) {
-    login.push_back(object.content[ptr]);
+  for (ptr = 0; ptr < content.size() && content[ptr] != 1; ++ptr) {
+    login.push_back(content[ptr]);
   }
 
-  for (ptr = ptr + 1; ptr < object.content.size(); ++ptr) {
-    password.push_back(object.content[ptr]);
+  for (ptr = ptr + 1; ptr < content.size(); ++ptr) {
+    password.push_back(content[ptr]);
   }
+  
+  return std::make_pair(login, password);
+}
+
+void Server::parseAuthData(const Object& object, Connection& user) {
+  auto [login, password] = splitAuthData(object.content);
 
   Object callback;
   callback.type = Object::Type::returnCode;
 
-  int code = storage.getUser(login, password);
-  
-  if (code == -2) {
-    callback.code = 2;
-    user.socket->send(encoder.encode(callback));
-    return;
+  switch (storage.getUser(login, password)) {
+    case -2:
+      callback.code = 2;
+      break;
+
+    case -1:
+      callback.code = 1;
+      user.user = storage.addUser(login, password);
+      user.status = Server::Connection::Status::inmenu;
+      break;
+
+    default:
+      callback.code = 0;
+      user.status = Server::Connection::Status::inmenu;
   }
-  if (code == -1) {
-    storage.addUser(login, password);
-    code = storage.getUser(login, password);
-    callback.code = 1;
-    user.socket->send(encoder.encode(callback));
-  } else {
-    callback.code = 0;
-    user.socket->send(encoder.encode(callback));
-  }
-  user.status = Server::Connection::Status::inmenu;
-  user.user = code;
+
+  user.socket->send(encoder.encode(callback));
 }
 
 void Server::parseCommand(const Object& object, Connection& user) {
