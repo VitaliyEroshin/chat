@@ -35,6 +35,8 @@ private:
   ObjectTree data;
   fs::Config& config;
   
+  std::pair<std::string, std::string> askAddress();
+
   void setupAddress();
   int connectToHost();
   

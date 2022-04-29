@@ -16,22 +16,61 @@ bool Client::setAddress(std::string ip, int port) {
   return cstd::inet_pton(AF_INET, ip.c_str(), &(socket.address.sin_addr));
 }
 
-void Client::setupAddress() {
-  std::string ip = ui.askForm({1, 1}, {1, 16}, "Enter ip address: ");
-  int port;
-  try {
-    port = std::stoi(ui.askForm({2, 1}, {1, 4}, "Enter the port: "));
-  } catch (...) {}
+std::pair<std::string, std::string> Client::askAddress() {
+  const size_t
+    ipOffsetH = 1,
+    ipOffsetV = 1,
+    ipBoxH = 16,
+    ipBoxV = 1;
+  
+  std::string ip = ui.askForm(
+    {ipOffsetV, ipOffsetH}, 
+    {ipBoxV, ipBoxH}, 
+    "Enter ip address: "
+  );
 
+  const size_t
+    portOffsetH = 1,
+    portOffsetV = 1,
+    portBoxH = 4,
+    portBoxV = 1;
+
+  std::string port = ui.askForm(
+    {ipOffsetV + portOffsetV, portOffsetH}, 
+    {portBoxV, portBoxH}, 
+    "Enter the port: "
+  );
+
+  return std::make_pair(ip, port);
+}
+
+void Client::setupAddress() {
+  std::string ip;
+  int port;
+  bool hint = false;
   while (!setAddress(ip, port)) {
-    ui.print({1, 1}, {3, 30}, "");
-    ui.print({4, 4}, "IP or port invalid. Please, try again.");
-    ip = ui.askForm({1, 1}, {1, 16}, "Enter ip address: ");
+    ui.clearWindow();
+    if (hint) {
+      const size_t
+        hintOffsetH = 4,
+        hintOffsetV = 4;
+
+      ui.print(
+        {hintOffsetV, hintOffsetH}, 
+        "IP or port invalid. Please, try again."
+      );
+    }
+    hint = true;
     
+    auto [ip_str, port_str] = askAddress();
     try {
-      port = std::stoi(ui.askForm({2, 1}, {1, 4}, "Enter the port: "));
-    } catch (...) {}
+      port = std::stoi(port_str);
+      ip = ip_str;
+    } catch (...) {
+      continue;
+    }
   }
+
   status = Status::connecting;
 }
 
