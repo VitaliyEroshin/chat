@@ -165,11 +165,4 @@ private:
   Logger& log;
   fs::Config config;
   std::unordered_map<std::string, LRUCache> data;
-  // LRUCache users;
-  // LRUCache userdata;
-  // LRUCache friends;
-  // LRUCache chats;
-  // LRUCache availableChats;
-  // LRUCache messages;
-  // LRUCache messagechatid;
 };
