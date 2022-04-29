@@ -22,7 +22,12 @@ make
 ```
 
 2) Once executables have successfully been built, you can find your **server** and **client** executables in the ```./bin/``` folder.
-3) Firstly, run the **server**. By default, it binds port ***8888***. If there are no errors, output must look like this:
+3) Firstly, run the **server**.
+```
+./bin/server
+```
+ By default, it binds port ***8888***. If there are no errors, output must look like this:
+ 
 <img width="219" alt="Server setup" src="https://user-images.githubusercontent.com/36928556/159168591-443be1a2-fdce-4182-899c-40c9b4402b80.png">
 
 4) Secondly, run the **client**. 

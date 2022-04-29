@@ -40,5 +40,8 @@ bin
 build
 cmake-build-debug
 
+# Runtime data
+data
+
 # Other
 *.DS_Store
