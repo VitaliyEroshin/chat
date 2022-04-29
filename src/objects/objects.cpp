@@ -1,14 +1,14 @@
 #include "objects.hpp"
 
 bool bit(char x, int i) {
-    return (x & (1<<i)) != 0;
+    return (x & (1 << i)) != 0;
 }
 
 void set(char& x, int i, bool value) {
     if (value) 
-        x |= (1<<i);
+        x |= (1 << i);
     else if (bit(x, i)) 
-        x ^= (1<<i);
+        x ^= (1 << i);
 }
 
 void Object::setId(int id_) {
