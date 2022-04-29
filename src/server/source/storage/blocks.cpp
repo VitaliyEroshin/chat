@@ -78,4 +78,15 @@ Block& LRUCache::operator[](size_t i) {
 LRUCache::LRUCache(size_t size, const std::string& path)
     : maxCacheSize(size), 
       path(path)
-{}
+{
+  std::filesystem::create_directories(path);
+}
+
+LRUCache::LRUCache(LRUCache&& other)
+    : maxCacheSize(other.maxCacheSize),
+      path(std::move(other.path)),
+      cache(std::move(other.cache)),
+      iterators(std::move(other.iterators))
+{
+  other.maxCacheSize = 0;
+}

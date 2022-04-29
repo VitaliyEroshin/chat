@@ -3,7 +3,8 @@
 
 void UserInterface::print(
         Cursor::Position pivot, Cursor::Position size, const output_t& text) {
-  while (!printing.try_lock());
+  
+  std::lock_guard<std::mutex> lock(printing);
 
   auto pos = cursor.position;
   cursor.moveTo(pivot);
@@ -20,7 +21,6 @@ void UserInterface::print(
   }
   cursor.moveTo(pos);
   out.flush();
-  printing.unlock();
 }
 
 void UserInterface::print(
@@ -75,10 +75,12 @@ output_t UserInterface::input(
     }
 
     in.buffer.left.push_back(c);
-    std::lock_guard<std::mutex> lock(printing);
-    print(c);
-    out.flush();
-    lock.~lock_guard();
+    
+    {
+      std::lock_guard<std::mutex> lock(printing);
+      print(c);
+      out.flush();
+    }
 
     if (!in.buffer.right.empty()) {
       refreshInputBuffer(pivot, size);
@@ -266,7 +268,6 @@ UserInterface::UserInterface(Client& client)
   : out(Output()), cursor(out), in(Input(out, keyboard)), client(client) {
   system("stty raw -echo");
   allocateSpace(getWindowHeight() - 1);
-  printing.unlock();
 }
 
 UserInterface::~UserInterface() {

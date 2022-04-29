@@ -16,22 +16,61 @@ bool Client::setAddress(std::string ip, int port) {
   return cstd::inet_pton(AF_INET, ip.c_str(), &(socket.address.sin_addr));
 }
 
-void Client::setupAddress() {
-  std::string ip = ui.askForm({1, 1}, {1, 16}, "Enter ip address: ");
-  int port;
-  try {
-    port = std::stoi(ui.askForm({2, 1}, {1, 4}, "Enter the port: "));
-  } catch (...) {}
+std::pair<std::string, std::string> Client::askAddress() {
+  const size_t
+    ipOffsetH = 1,
+    ipOffsetV = 1,
+    ipBoxH = 16,
+    ipBoxV = 1;
+  
+  std::string ip = ui.askForm(
+    {ipOffsetV, ipOffsetH}, 
+    {ipBoxV, ipBoxH}, 
+    "Enter ip address: "
+  );
 
+  const size_t
+    portOffsetH = 1,
+    portOffsetV = 1,
+    portBoxH = 4,
+    portBoxV = 1;
+
+  std::string port = ui.askForm(
+    {ipOffsetV + portOffsetV, portOffsetH}, 
+    {portBoxV, portBoxH}, 
+    "Enter the port: "
+  );
+
+  return std::make_pair(ip, port);
+}
+
+void Client::setupAddress() {
+  std::string ip;
+  int port;
+  bool hint = false;
   while (!setAddress(ip, port)) {
-    ui.print({1, 1}, {3, 30}, "");
-    ui.print({4, 4}, "IP or port invalid. Please, try again.");
-    ip = ui.askForm({1, 1}, {1, 16}, "Enter ip address: ");
+    ui.clearWindow();
+    if (hint) {
+      const size_t
+        hintOffsetH = 4,
+        hintOffsetV = 4;
+
+      ui.print(
+        {hintOffsetV, hintOffsetH}, 
+        "IP or port invalid. Please, try again."
+      );
+    }
+    hint = true;
     
+    auto [ip_str, port_str] = askAddress();
     try {
-      port = std::stoi(ui.askForm({2, 1}, {1, 4}, "Enter the port: "));
-    } catch (...) {}
+      port = std::stoi(port_str);
+      ip = ip_str;
+    } catch (...) {
+      continue;
+    }
   }
+
   status = Status::connecting;
 }
 
@@ -39,31 +78,83 @@ int Client::connectToHost() {
   return cstd::connect(socket.descriptor, (cstd::sockaddr*)&(socket.address), sizeof(socket.address));
 }
 
-int Client::auth() {
-  std::string username = ui.askForm({1, 1}, {1, 12}, "Username: ");
-  std::string password = ui.askForm({2, 1}, {1, 12}, "Password: ");
+std::pair<std::string, std::string> Client::askAuthData() {
+  // H - for horizontal, V - for vertical
+  const size_t 
+    usernameOffsetH = 1,
+    usernameOffsetV = 1,
+    usernameBoxH = 12,
+    usernameBoxV = 1;
 
+  std::string username = ui.askForm(
+    {usernameOffsetV, usernameOffsetH}, 
+    {usernameBoxV, usernameBoxH},
+     "Username: "
+  );
+
+  const size_t
+    passwordOffsetH = 1,
+    passwordOffsetV = 1,
+    passwordBoxH = 12,
+    passwordBoxV = 1;
+
+  std::string password = ui.askForm(
+    {usernameOffsetV + passwordOffsetV, passwordOffsetH}, 
+    {passwordBoxV, passwordBoxH}, 
+    "Password: "
+  );
+
+  return std::make_pair(username, password);
+}
+
+Object Client::makeAuthAttempt(const std::string& username, const std::string& password) {
+  const char splitter = 1;
   Object object;
   object.type = Object::Type::loginAttempt;
   object.content += username;
-  object.content.push_back(1);
+  object.content.push_back(splitter);
   object.content += password;
+  return object;
+}
 
-  socket.send(encoder.encode(object));
+int Client::printAuthResult(int code) {
+  const size_t
+    resultOffsetH = 1,
+    resultOffsetV = 4;
 
-  std::string query = socket.read();
-  object = encoder.decode(query);
+  auto printResult = [this] (const std::string& message) {
+    ui.print(
+      {resultOffsetV, resultOffsetV},
+      message
+    );
+  };
 
-  if (object.code == 0) {
-    ui.print({4, 1}, "Logged in!");
-  } else if (object.code == 1) {
-    ui.print({4, 1}, "Created new user!");
-  } else if (object.code == 2) {
-    ui.print({4, 1}, "Wrong password");
-    return -1;
+  switch (code) {
+    case 0:
+      printResult("Logged in!");
+      break;
+
+    case 1:
+      printResult("Created new user!");
+      break;
+
+    case 2:
+      printResult("Wrong password");
+      return -1;
   }
 
   return 0;
+}
+
+int Client::auth() {
+  auto [username, password] = askAuthData();
+  auto attempt = makeAuthAttempt(username, password);
+  socket.send(encoder.encode(attempt));
+
+  std::string query = socket.read();
+  attempt = encoder.decode(query);
+
+  return printAuthResult(attempt.code);
 }
 
 void Client::sendText(const std::string& text) {
@@ -191,6 +282,9 @@ void Client::listen() {
 }
 
 void Client::readServer() {
+  const int
+    kCommandCallback = 4;
+
   while (run.load()) {
     std::string encoded = socket.read();
 
@@ -209,7 +303,7 @@ void Client::readServer() {
         scroll = false;
         update.store(true);
 
-      } else if (object.hasReturnCode() && object.code == 4) {
+      } else if (object.hasReturnCode() && object.code == kCommandCallback) {
         object.setPrev(data.objects.front().id);
         object.setId(data.objects.front().id);
         data.objects.push_front(object);

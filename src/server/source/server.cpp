@@ -102,40 +102,49 @@ void Server::parseQuery(const std::string& query, Connection& user) {
   }
 }
 
-void Server::parseAuthData(const Object& object, Connection& user) {
+std::pair<std::string, std::string> splitAuthData(const std::string& content) {
+  std::string login, password;
   int ptr;
-  std::string login;
-  std::string password;
-
-  for (ptr = 0; ptr < object.content.size() && object.content[ptr] != 1; ++ptr) {
-    login.push_back(object.content[ptr]);
+  for (ptr = 0; ptr < content.size() && content[ptr] != 1; ++ptr) {
+    login.push_back(content[ptr]);
   }
 
-  for (ptr = ptr + 1; ptr < object.content.size(); ++ptr) {
-    password.push_back(object.content[ptr]);
+  for (ptr = ptr + 1; ptr < content.size(); ++ptr) {
+    password.push_back(content[ptr]);
   }
+  
+  return std::make_pair(login, password);
+}
+
+void Server::parseAuthData(const Object& object, Connection& user) {
+  auto [login, password] = splitAuthData(object.content);
 
   Object callback;
   callback.type = Object::Type::returnCode;
 
-  int code = storage.getUser(login, password);
-  
-  if (code == -2) {
-    callback.code = 2;
-    user.socket->send(encoder.encode(callback));
-    return;
+  const int 
+    kOk = 0,
+    kSignedUp = 1,
+    kWrongPassword = 2;
+
+
+  switch (storage.getUser(login, password)) {
+    case -2:
+      callback.code = kWrongPassword;
+      break;
+
+    case -1:
+      callback.code = kSignedUp;
+      user.user = storage.addUser(login, password);
+      user.status = Server::Connection::Status::inmenu;
+      break;
+
+    default:
+      callback.code = kOk;
+      user.status = Server::Connection::Status::inmenu;
   }
-  if (code == -1) {
-    storage.addUser(login, password);
-    code = storage.getUser(login, password);
-    callback.code = 1;
-    user.socket->send(encoder.encode(callback));
-  } else {
-    callback.code = 0;
-    user.socket->send(encoder.encode(callback));
-  }
-  user.status = Server::Connection::Status::inmenu;
-  user.user = code;
+
+  user.socket->send(encoder.encode(callback));
 }
 
 void Server::parseCommand(const Object& object, Connection& user) {
@@ -147,8 +156,10 @@ void Server::parseCommand(const Object& object, Connection& user) {
 
   Object callback;
   callback.type = Object::Type::text;
-  callback.id = 0;
-  callback.setReturnCode(4);
+  callback.setId(0);
+
+  const int kCommandCallback = 4;
+  callback.setReturnCode(kCommandCallback);
 
   if (handlers.count(commandType)) {
     handlers[commandType](callback, user, ss);
@@ -160,16 +171,4 @@ void Server::parseCommand(const Object& object, Connection& user) {
 void Server::addMessage(Object object, Connection& user) {
   std::stringstream ss;
   addMessageHandler(object, user, ss);
-  // object.author = user.user;
-  // object.content = "[" + storage.getUserNickname(user.user) + "] " + object.content;
-  // for (auto &other : connections) {
-  //   if (other == user) {
-  //     continue;
-  //   }
-  //   if (storage.getChat(other.user) != storage.getChat(user.user)) {
-  //     continue;
-  //   }
-
-  //   other.socket->send(encoder.encode(object));
-  // }
 }

@@ -106,6 +106,8 @@ public:
     Block& operator[](size_t i);
 
     LRUCache(size_t size, const std::string& path);
+    LRUCache() = default;
+    LRUCache(LRUCache&& other);
 };
 
 class SmartStorage : public Storage {
@@ -121,6 +123,8 @@ public:
   std::vector<userid_t> getUserFriends(userid_t id) override;
   std::vector<chatid_t> getUserChats(userid_t id) override;
   int addFriend(userid_t selfId, userid_t target) override;
+
+  void addModule(const std::string& alias, size_t lruSize);
   SmartStorage(const std::string& configPath, Logger& logger);
 
   std::string getUserNickname(userid_t id) override;
@@ -160,11 +164,5 @@ private:
 
   Logger& log;
   fs::Config config;
-  LRUCache users;
-  LRUCache userdata;
-  LRUCache friends;
-  LRUCache chats;
-  LRUCache availableChats;
-  LRUCache messages;
-  LRUCache messagechatid;
+  std::unordered_map<std::string, LRUCache> data;
 };
