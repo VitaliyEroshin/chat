@@ -127,8 +127,8 @@ void Server::parseAuthData(const Object& object, Connection& user) {
     kSignedUp = 1,
     kWrongPassword = 2;
 
-
-  switch (storage.getUser(login, password)) {
+  int result = storage.getUser(login, password);
+  switch (result) {
     case -2:
       callback.code = kWrongPassword;
       break;
@@ -141,6 +141,7 @@ void Server::parseAuthData(const Object& object, Connection& user) {
 
     default:
       callback.code = kOk;
+      user.user = result;
       user.status = Server::Connection::Status::inmenu;
   }
 
