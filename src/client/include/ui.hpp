@@ -65,6 +65,15 @@ public:
       std::deque<output_char_t> right;
       output_t left;
 
+      size_t rightSize = 0;
+      size_t leftSize = 0;
+
+      void pushLeft(char c);
+      void pushRight(char c);
+
+      void popLeft();
+      void popRight();
+
       void moveLeft();
       void moveRight();
       void moveLeftAll();
@@ -102,6 +111,7 @@ public:
   void print(Cursor::Position pivot, const output_t& text);
 
   static int characterSize(char c);
+  static size_t getTextRealSize(const std::string& s);
   output_t input(Cursor::Position pivot, Cursor::Position size, bool dynamic = false);
   output_t askForm(Cursor::Position pivot, Cursor::Position size, const output_t& text);
 

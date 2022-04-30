@@ -190,7 +190,8 @@ void Client::refreshMessages() {
     std::stringstream ss((*it).content);
     std::string s;
     while (std::getline(ss, s)) {
-      size_t height = ceil(s.size(), width - 2);
+      size_t length = UserInterface::getTextRealSize(s);
+      size_t height = ceil(length, width - 2);
       if (space < height)
         return;
 
