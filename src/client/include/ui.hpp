@@ -97,10 +97,11 @@ public:
   [[maybe_unused]] void testWindowCorners();
 
   void print(const output_t& s);
-  void print(output_char_t c);
+  void print(output_char_t c, bool move = true);
   void print(Cursor::Position pivot, Cursor::Position size, const output_t& text);
   void print(Cursor::Position pivot, const output_t& text);
 
+  static int characterSize(char c);
   output_t input(Cursor::Position pivot, Cursor::Position size, bool dynamic = false);
   output_t askForm(Cursor::Position pivot, Cursor::Position size, const output_t& text);
 

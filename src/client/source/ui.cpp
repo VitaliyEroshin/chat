@@ -3,9 +3,8 @@
 
 void UserInterface::print(
         Cursor::Position pivot, Cursor::Position size, const output_t& text) {
-  
-  std::lock_guard<std::mutex> lock(printing);
 
+  std::lock_guard<std::mutex> lock(printing);
   auto pos = cursor.position;
   cursor.moveTo(pivot);
 
@@ -34,14 +33,29 @@ void UserInterface::log(size_t cell, output_t s) {
   out.flush();
 }
 
+int UserInterface::characterSize(char c) {
+  if ((c & 0x80) == 0)
+    return 1;
+
+  if ((c & 0xE0) == 0xC0)
+    return 2;
+
+  if ((c & 0xF0) == 0xE0)
+    return 3;
+
+  if ((c & 0xF8) == 0xF0)
+    return 4;
+  
+  return 0;
+}
+
 output_t UserInterface::input(
         Cursor::Position pivot, Cursor::Position size, bool dynamic) {
 
-  output_char_t c = 0;
+  char c = 0;
   auto pos = cursor.position;
   cursor.moveTo(pivot);
   out.flush();
-
   Cursor::Position end{pivot.x + size.x - 1, pivot.y + size.y - 1};
   while (!UserInterface::Keyboard::isEnter(c)) {
     c = getchar();
@@ -69,16 +83,28 @@ output_t UserInterface::input(
         continue;
       }
     }
-    
-    if (!std::isalnum(c) && !std::ispunct(c) && !std::isblank(c)) {
+
+    if (UserInterface::Keyboard::isEnter(c)) {
       continue;
     }
+    
+    // if (!std::isalnum(c) && !std::ispunct(c) && !std::isblank(c)) {
+    //   continue;
+    // }
 
     in.buffer.left.push_back(c);
-    
     {
       std::lock_guard<std::mutex> lock(printing);
-      print(c);
+
+      print(c, false);
+      for (int i = 0; i < characterSize(c) - 1; ++i) {
+        c = getchar();
+        in.buffer.left.push_back(c);
+        print(c, false);
+        
+      }
+
+      ++cursor.position.y;
       out.flush();
     }
 
@@ -90,11 +116,13 @@ output_t UserInterface::input(
       cursor.moveTo({cursor.position.x + 1, pivot.y});
     }
   }
-
+  
+  
   if (UserInterface::Keyboard::isEnter(in.buffer.left.back())) {
     in.buffer.left.pop_back();
   }
 
+  
   in.buffer.moveLeftAll();
   output_t value = in.buffer.left;
   in.buffer.left.clear();
@@ -168,8 +196,13 @@ void UserInterface::processInputBackspace(Cursor::Position& pivot, Cursor::Posit
   if (cursor.position == pivot) {
     return;
   }
-  
+
+  while (!characterSize(in.buffer.left.back())) {
+    in.buffer.left.pop_back();
+  }
+
   in.buffer.left.pop_back();
+
   if (cursor.position.y == pivot.y) {
     cursor.moveTo({cursor.position.x - 1, end.y});
   } else {
@@ -191,9 +224,19 @@ void UserInterface::clearWindow() {
 void UserInterface::Input::Buffer::moveLeft() {
   left.push_back(right.front());
   right.pop_front();
+
+  while (!right.empty() && !UserInterface::characterSize(right.front())) {
+    left.push_back(right.front());
+    right.pop_front();
+  }
 }
 
 void UserInterface::Input::Buffer::moveRight() {
+  while (!left.empty() && !UserInterface::characterSize(left.back())) {
+    right.push_front(left.back());
+    left.pop_back();
+  }
+
   right.push_front(left.back());
   left.pop_back();
 }
@@ -258,9 +301,12 @@ void UserInterface::Cursor::moveTo(const Position& pos) {
 
 output_t UserInterface::Input::Buffer::getRight() {
   output_t s;
-  for (size_t i = right.size(); i > 0; --i) {
-    s.push_back(right[i - 1]);
+  for (auto &x : right) {
+    s.push_back(x);
   }
+  // for (size_t i = right.size(); i > 0; --i) {
+  //   s.push_back(right.front());
+  // }
   return s;
 }
 
@@ -304,13 +350,17 @@ void UserInterface::allocateSpace(size_t n) {
 }
 
 void UserInterface::print(const output_t& s) {
-  out.out << s;
-  cursor.position.y += s.size();
+  for (const auto &c : s) {
+    print(c);
+  }
+  // out.out << s;
+  // cursor.position.y += s.size();
 }
 
-void UserInterface::print(output_char_t c) {
+void UserInterface::print(output_char_t c, bool move) {
   out.out << c;
-  ++cursor.position.y;
+  if (characterSize(c) && move)
+    ++cursor.position.y;
 }
 
 void UserInterface::scrollChatDown() {
