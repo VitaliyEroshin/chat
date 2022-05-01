@@ -195,26 +195,38 @@ void UserInterface::processInputArrow(Cursor::Position pivot, Cursor::Position e
       return;
     }
   } else if (direction == Cursor::Direction::up) {
-    if (cursor.position.x == pivot.x) {
+    if (in.buffer.leftWidthSum < end.y - pivot.y) {
       scrollChatUp();
       return;
     }
 
-    for (size_t i = 0; i <= end.y - pivot.y; ++i) {
-      in.buffer.moveRight();
+    for (times = 0; times <= end.y - pivot.y;) {
+      times += in.buffer.moveRight();
     }
+
+    direction = Cursor::Direction::left;
   } else if (direction == Cursor::Direction::down) {
-    if (cursor.position.x == end.x) {
+    if (in.buffer.rightWidthSum < end.y - pivot.y) {
       scrollChatDown();
       return;
     }
   
-    for (size_t i = 0; i <= end.y - pivot.y; ++i) {
-      in.buffer.moveLeft();
+    for (times = 0; times <= end.y - pivot.y;) {
+      times += in.buffer.moveLeft();
     }
+    direction = Cursor::Direction::right;
   }
-  for (int i = 0; i < times; ++i)
+
+  for (int i = 0; i < times; ++i) {
+    if (direction == Cursor::Direction::left && cursor.position.y == pivot.y) {
+      cursor.moveTo({cursor.position.x - 1, end.y});
+      continue;
+    } else if (direction == Cursor::Direction::right && cursor.position.y >= end.y && cursor.position.x != end.x) {
+      cursor.moveTo({cursor.position.x + 1, pivot.y});
+      continue;
+    }
     cursor.move(direction);
+  }
 }
 
 void UserInterface::refreshInputBuffer(Cursor::Position pivot, Cursor::Position size) {
