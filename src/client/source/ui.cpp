@@ -87,8 +87,6 @@ output_t UserInterface::input(
   out.flush();
   Cursor::Position end{pivot.x + size.x - 1, pivot.y + size.y - 1};
   while (!UserInterface::Keyboard::isEnter(c)) {
-    log(0, "R" + std::to_string(in.buffer.left.size()));
-    log(1, "L" + std::to_string(in.buffer.right.size()));
     c = getchar();
     
     if (UserInterface::Keyboard::isTab(c)) {
