@@ -1,6 +1,7 @@
 #include "client.hpp"
 
 int main() {
+  setlocale(LC_ALL, "en_US.UTF-8");
   Logger log = {&std::cerr};
   StrEncoder encoder;
   

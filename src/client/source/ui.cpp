@@ -77,7 +77,7 @@ output_t UserInterface::input(
   out.flush();
   Cursor::Position end{pivot.x + size.x - 1, pivot.y + size.y - 1};
   while (!UserInterface::Keyboard::isEnter(c)) {
-    log(0, "CRSR(" + std::to_string(cursor.position.x) + ";" + std::to_string(cursor.position.y) + ")");
+    // log(0, "CRSR(" + std::to_string(cursor.position.x) + ";" + std::to_string(cursor.position.y) + ")");
     c = getchar();
     
     if (UserInterface::Keyboard::isTab(c)) {
@@ -94,7 +94,7 @@ output_t UserInterface::input(
       processInputBackspace(pivot, end, size, dynamic);
       continue;
     }
-    log(2, std::to_string(in.buffer.rightSize + in.buffer.leftSize));
+    // log(2, std::to_string(in.buffer.rightSize + in.buffer.leftSize));
     if (cursor.position.y == pivot.y + size.y) {
       if (dynamic) {
         allocateChatSpace(pivot, size);
@@ -216,11 +216,11 @@ void UserInterface::processInputBackspace(Cursor::Position& pivot, Cursor::Posit
   }
 
   in.buffer.popLeft();
-  if (in.buffer.left.empty()) {
-    log(1, "EMPTY");
-  } else {
-    log(1, "NOT");
-  }
+  // if (in.buffer.left.empty()) {
+  //   log(1, "EMPTY");
+  // } else {
+  //   log(1, "NOT");
+  // }
 
   if (cursor.position.y == pivot.y) {
     cursor.moveTo({cursor.position.x - 1, end.y});
@@ -400,9 +400,33 @@ void UserInterface::print(const output_t& s) {
 }
 
 void UserInterface::print(output_char_t c, bool move) {
-  out.out << c;
-  if (characterSize(c) && move)
-    ++cursor.position.y;
+  static char buffer[4];
+  static wchar_t wcs[4];
+  static size_t sz = 0;
+  static size_t i = 0;
+
+  if (characterSize(c)) {
+    sz = characterSize(c);
+    i = 0;
+  } else {
+    ++i;
+  }
+  
+  buffer[i] = c;
+  
+  if (i + 1 == sz) {
+    mbstowcs(wcs, buffer, 4);
+    int width = wcswidth(wcs, 4);
+    if (width != -1) {
+      cursor.position.y += width;
+      out.out << buffer;
+    }
+
+    for (size_t i = 0; i < 4; ++i) {
+      wcs[i] = 0;
+      buffer[i] = 0;
+    }  
+  }
 }
 
 void UserInterface::scrollChatDown() {
