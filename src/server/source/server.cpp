@@ -130,17 +130,17 @@ void Server::parseAuthData(const Object& object, Connection& user) {
   int result = storage.getUser(login, password);
   switch (result) {
     case -2:
-      callback.code = kWrongPassword;
+      callback.setReturnCode(kWrongPassword);
       break;
 
     case -1:
-      callback.code = kSignedUp;
+      callback.setReturnCode(kSignedUp);
       user.user = storage.addUser(login, password);
       user.status = Server::Connection::Status::inmenu;
       break;
 
     default:
-      callback.code = kOk;
+      callback.setReturnCode(kOk);
       user.user = result;
       user.status = Server::Connection::Status::inmenu;
   }
