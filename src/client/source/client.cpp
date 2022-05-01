@@ -418,6 +418,6 @@ void Client::drawChatPointer() {
   ui.print(
     {ui.out.window.height - 2 - chatspace, 2}, 
     {chatspace + 2, 2},
-    "  >   "
+    "  >"
   );
 }

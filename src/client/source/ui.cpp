@@ -9,22 +9,35 @@ void UserInterface::print(
   cursor.moveTo(pivot);
   auto it = text.begin();
 
-  for (size_t i = 0; i < size.x * size.y; ++i) {
+  static int digit = 0;
+  ++digit;
+  digit %= 10;
+
+  int printedLength = 0;
+  for (size_t i = 0; i < size.x * size.y;) {
     if (it == text.end()) {
       print(' ');
+      ++i;
+      ++printedLength;
     } else {
       size_t length = characterSize(*it);
+      
       while (length--) {
-        print(*it);
+        int width = print(*it, false);
+        if (width != -1) {
+          i += width;
+          printedLength += width;
+        }
         ++it;
-      } 
+      }
     }
 
-    if (i != 0 && (i + 1) % size.y == 0) {
-      if (cursor.position.x == pivot.x + size.x - 1) {
+    if (printedLength >= size.y) {
+      if (cursor.position.x >= pivot.x + size.x - 1) {
         continue;
       }
       cursor.moveTo({cursor.position.x + 1, pivot.y});
+      printedLength = 0;
     }
   }
   cursor.moveTo(pos);
@@ -32,13 +45,10 @@ void UserInterface::print(
 }
 
 size_t UserInterface::getTextRealSize(const std::string& s) {
-  size_t result = 0;
-  for (const auto &x : s) {
-    if (UserInterface::characterSize(x)) {
-      ++result;
-    }
-  }
-  return result;
+  wchar_t cstr[1024];
+  mbstowcs(cstr, s.c_str(), 1024);
+
+  return wcswidth(cstr, 1024);
 }
 
 void UserInterface::print(
@@ -77,7 +87,8 @@ output_t UserInterface::input(
   out.flush();
   Cursor::Position end{pivot.x + size.x - 1, pivot.y + size.y - 1};
   while (!UserInterface::Keyboard::isEnter(c)) {
-    // log(0, "CRSR(" + std::to_string(cursor.position.x) + ";" + std::to_string(cursor.position.y) + ")");
+    log(0, "R" + std::to_string(in.buffer.left.size()));
+    log(1, "L" + std::to_string(in.buffer.right.size()));
     c = getchar();
     
     if (UserInterface::Keyboard::isTab(c)) {
@@ -94,30 +105,31 @@ output_t UserInterface::input(
       processInputBackspace(pivot, end, size, dynamic);
       continue;
     }
-    // log(2, std::to_string(in.buffer.rightSize + in.buffer.leftSize));
-    if (cursor.position.y == pivot.y + size.y) {
-      if (dynamic) {
-        allocateChatSpace(pivot, size);
-      } else if (in.buffer.rightSize + in.buffer.leftSize == size.x * size.y) {
-        continue;
-      }
+
+    const int maxLength = 768;
+    if (in.buffer.rightSize + in.buffer.leftSize >= maxLength) {
+      continue;
+    }
+
+    int bufferSize = in.buffer.rightWidthSum + in.buffer.leftWidthSum;
+    if (dynamic && bufferSize >= size.x * size.y - 2) {
+      allocateChatSpace(pivot, size);
+    } else if (bufferSize >= size.x * size.y) {
+      continue;
     }
 
     if (UserInterface::Keyboard::isEnter(c)) {
       continue;
     }
-    
     {
       std::lock_guard<std::mutex> lock(printing);
-      in.buffer.pushLeft(c);
-      print(c);
-      for (int i = 0; i < characterSize(c) - 1; ++i) {
+      in.buffer.pushLeft(c, print(c));
+      int sz = characterSize(c);
+      for (int i = 0; i < sz - 1; ++i) {
         c = getchar();
-        in.buffer.pushLeft(c);
-        print(c);
+        in.buffer.pushLeft(c, print(c));
         
       }
-
       out.flush();
     }
 
@@ -125,7 +137,7 @@ output_t UserInterface::input(
       refreshInputBuffer(pivot, size);
     }
     
-    if (cursor.position.y == end.y + 1 && cursor.position.x != end.x) {
+    if (cursor.position.y >= end.y + 1 && cursor.position.x != end.x) {
       cursor.moveTo({cursor.position.x + 1, pivot.y});
     }
   }
@@ -140,6 +152,8 @@ output_t UserInterface::input(
   output_t value = in.buffer.left;
   in.buffer.left.clear();
   in.buffer.leftSize = 0;
+  in.buffer.leftWidthSum = 0;
+  in.buffer.leftWidth.clear();
   cursor.moveTo(pos);
   out.flush();
   return value;
@@ -159,11 +173,12 @@ void UserInterface::processInputArrow(Cursor::Position pivot, Cursor::Position e
   getchar();
   auto direction = UserInterface::Cursor::getDirection(getchar());
   std::lock_guard<std::mutex> lock(printing);
+  int times = 0;
   if (direction == Cursor::Direction::left) {
     if (cursor.position == pivot || in.buffer.left.empty())
       return;
       
-    in.buffer.moveRight();
+    times = in.buffer.moveRight();
 
     if (cursor.position.y == pivot.y) {
       cursor.moveTo({cursor.position.x - 1, end.y});
@@ -173,9 +188,9 @@ void UserInterface::processInputArrow(Cursor::Position pivot, Cursor::Position e
     if (cursor.position == Cursor::Position{end.x, end.y + 1} || in.buffer.right.empty())
       return;
 
-    in.buffer.moveLeft();
+    times = in.buffer.moveLeft();
 
-    if (cursor.position.y == end.y && cursor.position.x != end.x) {
+    if (cursor.position.y >= end.y && cursor.position.x != end.x) {
       cursor.moveTo({cursor.position.x + 1, pivot.y});
       return;
     }
@@ -198,7 +213,8 @@ void UserInterface::processInputArrow(Cursor::Position pivot, Cursor::Position e
       in.buffer.moveLeft();
     }
   }
-  cursor.move(direction);
+  for (int i = 0; i < times; ++i)
+    cursor.move(direction);
 }
 
 void UserInterface::refreshInputBuffer(Cursor::Position pivot, Cursor::Position size) {
@@ -214,21 +230,17 @@ void UserInterface::processInputBackspace(Cursor::Position& pivot, Cursor::Posit
   while (!characterSize(in.buffer.left.back())) {
     in.buffer.popLeft();
   }
-
-  in.buffer.popLeft();
-  // if (in.buffer.left.empty()) {
-  //   log(1, "EMPTY");
-  // } else {
-  //   log(1, "NOT");
-  // }
+  int times = in.buffer.leftWidth.back();
+  in.buffer.popLeft(true);
 
   if (cursor.position.y == pivot.y) {
-    cursor.moveTo({cursor.position.x - 1, end.y});
-  } else {
+    cursor.moveTo({cursor.position.x - 1, end.y + 1});
+  } 
+  for (int i = 0; i < times; ++i)
     cursor.move(Cursor::Direction::left);
-  }
+  
 
-  if (dynamic && cursor.position.y == end.y) {
+  if (dynamic && in.buffer.leftSize + in.buffer.rightSize < (size.x - 1) * size.y) {
     deallocateChatSpace(pivot, size);
   }
   
@@ -240,52 +252,78 @@ void UserInterface::clearWindow() {
   print({0, 0}, {getWindowHeight(), getWindowWidth() - 1}, "");
 }
 
-void UserInterface::Input::Buffer::pushLeft(char c) {
+void UserInterface::Input::Buffer::pushLeft(char c, int sz) {
   left.push_back(c);
   if (UserInterface::characterSize(c))  {
-    ++leftSize;
+    leftSize += UserInterface::characterSize(c);
+  }
+  if (sz != -1) {
+    leftWidth.push_back(sz);
+    leftWidthSum += sz;
   }
 }
 
-void UserInterface::Input::Buffer::pushRight(char c) {
+void UserInterface::Input::Buffer::pushRight(char c, int sz) {
   right.push_front(c);
   if (UserInterface::characterSize(c))  {
-    ++rightSize;
+    rightSize += UserInterface::characterSize(c);
+  }
+  if (sz != -1) {
+    rightWidth.push_front(sz);
+    rightWidthSum += sz;
   }
 }
 
-void UserInterface::Input::Buffer::popLeft() {
+void UserInterface::Input::Buffer::popLeft(bool popWidth) {
+  if (left.empty()) {
+    return;
+  }
   if (UserInterface::characterSize(left.back())) {
-    --leftSize;
+    leftSize -= UserInterface::characterSize(left.back());
   }
   left.pop_back();
+  if (popWidth) {
+    leftWidthSum -= leftWidth.back();
+    leftWidth.pop_back();
+  }
 }
 
-void UserInterface::Input::Buffer::popRight() {
+void UserInterface::Input::Buffer::popRight(bool popWidth) {
+  if (right.empty()) {
+    return;
+  }
   if (UserInterface::characterSize(right.front())) {
-    --rightSize;
+    rightSize -= UserInterface::characterSize(right.front());
   }
   right.pop_front();
-}
-
-void UserInterface::Input::Buffer::moveLeft() {
-  pushLeft(right.front());
-  popRight();
-
-  while (!right.empty() && !UserInterface::characterSize(right.front())) {
-    pushLeft(right.front());
-    popRight();
+  if (popWidth) {
+    rightWidthSum -= rightWidth.front();
+    rightWidth.pop_front();
   }
 }
 
-void UserInterface::Input::Buffer::moveRight() {
+int UserInterface::Input::Buffer::moveLeft() {
+  pushLeft(right.front(), rightWidth.front());
+  popRight(true);
+
+  while (!right.empty() && !UserInterface::characterSize(right.front())) {
+    pushLeft(right.front(), -1);
+    popRight();
+  }
+
+  return leftWidth.back();
+}
+
+int UserInterface::Input::Buffer::moveRight() {
   while (!left.empty() && !UserInterface::characterSize(left.back())) {
-    pushRight(left.back());
+    pushRight(left.back(), -1);
     popLeft();
   }
 
-  pushRight(left.back());
-  popLeft();
+  pushRight(left.back(), leftWidth.back());
+  popLeft(true);
+
+  return rightWidth.front();
 }
 
 void UserInterface::Input::Buffer::moveLeftAll() {
@@ -399,7 +437,7 @@ void UserInterface::print(const output_t& s) {
   }
 }
 
-void UserInterface::print(output_char_t c, bool move) {
+int UserInterface::print(output_char_t c, bool move) {
   static char buffer[4];
   static wchar_t wcs[4];
   static size_t sz = 0;
@@ -413,20 +451,23 @@ void UserInterface::print(output_char_t c, bool move) {
   }
   
   buffer[i] = c;
-  
+  out.out << c;
   if (i + 1 == sz) {
     mbstowcs(wcs, buffer, 4);
     int width = wcswidth(wcs, 4);
     if (width != -1) {
       cursor.position.y += width;
-      out.out << buffer;
+      
+      
     }
 
     for (size_t i = 0; i < 4; ++i) {
       wcs[i] = 0;
       buffer[i] = 0;
-    }  
+    }
+    return width;
   }
+  return -1;
 }
 
 void UserInterface::scrollChatDown() {
@@ -442,7 +483,7 @@ void UserInterface::allocateChatSpace(Cursor::Position& pivot, Cursor::Position&
   --pivot.x;
   ++size.x;
   auto pos = cursor.position;
-  cursor.moveTo({pos.x, pivot.y});
+  cursor.move(Cursor::Direction::up);
   client.drawChatPointer();
   refreshInputBuffer(pivot, size);
   client.update.store(true);
