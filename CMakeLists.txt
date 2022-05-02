@@ -16,13 +16,10 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/src/logger)
 
 if (TEST)
     message("Running test mode")
-    if (GITHUB_ACTIONS)
-        add_subdirectory(${PROJECT_SOURCE_DIR}/3rdparty/gtest)
-    else (GITHUB_ACTIONS)
-        find_package(GTest REQUIRED)
-        include_directories(${GTEST_INCLUDE_DIRS})
-    endif (GITHUB_ACTIONS)
-    
+
+    find_package(GTest REQUIRED)
+    include_directories(${GTEST_INCLUDE_DIRS})
+
     add_subdirectory(${PROJECT_SOURCE_DIR}/tests)
 
 else (TEST)

@@ -1,10 +1,8 @@
 name: Test & Build
 
 on:
-  push
-  workflow_dispatch
-  pull_request:
-    types: [opened, reopened]
+  workflow_dispatch:
+  push:
 
 jobs:
   build:
@@ -13,3 +11,27 @@ jobs:
     
     steps:
     - uses: actions/checkout@v3
+    
+    - name: Clone GTest
+      uses: actions/checkout@v3
+      with:
+        repository: google/googletest
+        path: 3rdparty/gtest
+    
+    - name: Install GTest
+      run: |
+        cd 3rdparty/gtest/
+        mkdir build
+        cd build
+        cmake ..
+        make
+        sudo make install
+
+    - name: Test
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DTEST=on
+        make
+        ../tests/bin/encoder_test
+        ../tests/bin/logger_test

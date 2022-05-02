@@ -3,8 +3,9 @@ include_directories(${GTEST_INCLUDE_DIRS})
 add_executable(encoder_test encoder_test.cpp)
 
 target_link_libraries(encoder_test objects_lib)
-target_link_libraries(encoder_test ${GTEST_LIBRARIES} Threads::Threads)
-
+target_link_libraries(encoder_test ${GTEST_LIBRARIES})
+find_package(Threads)
+target_link_libraries(encoder_test ${CMAKE_THREAD_LIBS_INIT})
 
 target_include_directories(encoder_test PUBLIC ${OBJECTS_LIB_DIR})
 
