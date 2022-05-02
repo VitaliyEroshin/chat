@@ -21,7 +21,7 @@ void Object::setAuthor(int author_) {
     set(attributes, 1, true);
 }
 
-void Object::setTimestamp(int timestamp_) {
+void Object::setTimestamp(int64_t timestamp_) {
     timestamp = timestamp_;
     set(attributes, 2, true);
 }

@@ -284,7 +284,8 @@ void Client::listen() {
 
 void Client::readServer() {
   const int
-    kCommandCallback = 4;
+    kCommandCallback = 4,
+    kHistoricMessage = 5;
 
   while (run.load()) {
     std::string encoded = socket.read();
@@ -300,6 +301,9 @@ void Client::readServer() {
       bool scroll = (data.head == data.objects.begin());
 
       if (data.objects.empty()) {
+        if (object.hasReturnCode() && object.code == kCommandCallback) {
+          object.setId(-1);
+        }
         data.insert(object);
         scroll = false;
         update.store(true);
@@ -309,13 +313,25 @@ void Client::readServer() {
         object.setId(data.objects.front().id);
         data.objects.push_front(object);
 
-      } else if (object.prev == data.objects.front().id) {
-        data.objects.push_front(object);
-
       } else if (object.id == data.objects.back().prev) {
         data.objects.push_back(object);
         scroll = false;
 
+      } else if (object.prev == data.objects.front().id) {
+        data.objects.push_front(object);
+
+      } else if (data.objects.back().hasReturnCode() && data.objects.back().code == kCommandCallback && object.hasReturnCode() && object.code == kHistoricMessage) {
+        data.objects.push_back(object);
+        auto it = --data.objects.end();
+        while ((*it).hasReturnCode() && (*it).code == kCommandCallback) {
+          (*it).setPrev(data.objects.back().id);
+          (*it).setId(data.objects.back().id);
+          if (it == data.objects.begin()) {
+            break;
+          }
+        }
+      } else if (data.objects.front().hasReturnCode() && data.objects.front().code == kCommandCallback) {
+        data.objects.push_front(object);
       }
       
       if (scroll) {

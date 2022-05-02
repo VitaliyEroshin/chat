@@ -28,7 +28,7 @@ public:
   virtual int addFriend(userid_t selfId, userid_t target) = 0;
 
   virtual void setMessage(Object object, Encoder& encoder, chatid_t chatid) = 0;
-  virtual void addMessage(Object object, Encoder& encoder, chatid_t chatid) = 0;
+  virtual int addMessage(Object object, Encoder& encoder, chatid_t chatid) = 0;
   virtual Object getMessage(int id, Encoder& encoder) = 0;
   virtual Object getLastMessage(Encoder& encoder, chatid_t chatid) = 0;
   virtual chatid_t getMessageChatid(int id) = 0;
@@ -130,7 +130,7 @@ public:
   std::string getUserNickname(userid_t id) override;
 
   void setMessage(Object object, Encoder& encoder, chatid_t chatid) override;
-  void addMessage(Object object, Encoder& encoder, chatid_t chatid) override;
+  int addMessage(Object object, Encoder& encoder, chatid_t chatid) override;
   Object getMessage(int id, Encoder& encoder) override;
   Object getLastMessage(Encoder& encoder, chatid_t chatid) override;
   chatid_t getMessageChatid(int id) override;

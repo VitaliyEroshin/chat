@@ -308,12 +308,13 @@ void SmartStorage::setMessage(Object object, Encoder& encoder, chatid_t chatid) 
   idblock.save();
 }
 
-void SmartStorage::addMessage(Object object, Encoder& encoder, chatid_t chatid) {
+int SmartStorage::addMessage(Object object, Encoder& encoder, chatid_t chatid) {
   Block& block = data["chats"][std::to_string(chatid)];
   int prev = std::stoi(block[1]);
   
   object.setPrev(prev);
-  object.setId(getMessageCount() + 1);
+  int id = getMessageCount() + 1;
+  object.setId(id);
   ++messageCount;
   
   if (prev != 0) {
@@ -325,6 +326,7 @@ void SmartStorage::addMessage(Object object, Encoder& encoder, chatid_t chatid) 
   setMessage(object, encoder, chatid);
   block[1] = std::to_string(object.id);
   block.save();
+  return id;
 }
 
 Object SmartStorage::getMessage(int id, Encoder& encoder) {

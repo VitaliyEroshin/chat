@@ -120,8 +120,8 @@ Object StrEncoder::decode(const Encoder::bytes& bytes) {
   }
     
   if (object.hasTimestamp()) {
-    object.timestamp = fromBytes<int>(bytes.substr(ptr, sizeof(int)));
-    ptr += sizeof(int);
+    object.timestamp = fromBytes<int64_t>(bytes.substr(ptr, sizeof(int64_t)));
+    ptr += sizeof(int64_t);
   }
 
   if (object.hasThread()) {
