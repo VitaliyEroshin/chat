@@ -1,0 +1,50 @@
+name: Test & Build
+
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  build:
+  
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Clone GTest
+      uses: actions/checkout@v3
+      with:
+        repository: google/googletest
+        path: 3rdparty/gtest
+    
+    - name: Install GTest
+      run: |
+        cd 3rdparty/gtest/
+        mkdir build
+        cd build
+        cmake ..
+        make
+        sudo make install
+
+    - name: Test
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DTEST=on
+        make
+        ../tests/bin/encoder_test
+        ../tests/bin/logger_test
+
+    - name: Build Executables
+      run: |
+        cd build
+        cmake .. -DTEST=off -DCMAKE_INSTALL_PREFIX="./package/"
+        make
+        make install
+
+    - name: UploadArtifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: Distributive
+        path: ./build/package/
