@@ -129,7 +129,15 @@ void Server::getChatsHandler(Object& callback, Connection& user, std::stringstre
 }
 
 void Server::getHelpHandler(Object& callback, Connection& user, std::stringstream& ss) {
-  callback.content = fs::loadContent("./content/help.txt");
+  callback.content = fs::loadContent("./content/help/header.txt");
+  user.socket->send(encoder.encode(callback));
+  callback.content = fs::loadContent("./content/help/friends.txt");
+  user.socket->send(encoder.encode(callback));
+  callback.content = fs::loadContent("./content/help/chats.txt");
+  user.socket->send(encoder.encode(callback));
+  callback.content = fs::loadContent("./content/help/other.txt");
+  user.socket->send(encoder.encode(callback));
+  callback.content = fs::loadContent("./content/help/footer.txt");
 }
 
 void Server::getAboutHandler(Object& callback, Connection& user, std::stringstream& ss) {

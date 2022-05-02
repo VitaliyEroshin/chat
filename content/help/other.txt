@@ -1,0 +1,3 @@
+|                     |                                          |
+|   /about            |    view app description.                 |
+|   /quit             |    leave the app.                        |
