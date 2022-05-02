@@ -38,7 +38,6 @@ jobs:
 
     - name: Build Executables
       run: |
-        mkdir build
         cd build
         cmake .. -DTEST=off -DCMAKE_INSTALL_PREFIX="./package/"
         make
