@@ -1,4 +1,3 @@
-./clear.sh
 cmake -B build -DTEST=on
 cmake --build build -j4
 
