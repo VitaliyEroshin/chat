@@ -35,3 +35,15 @@ jobs:
         make
         ../tests/bin/encoder_test
         ../tests/bin/logger_test
+
+    - name: Build Executables
+      run: |
+        cmake .. -DTEST=off -DCMAKE_INSTALL_PREFIX="./package/"
+        make
+        make install
+
+    - name: UploadArtifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: Distributive
+        path: ./package/exe

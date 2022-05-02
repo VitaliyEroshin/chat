@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
 
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+
+set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib")
+
 project (
     Chat
     VERSION 1.3
@@ -28,4 +33,5 @@ else (TEST)
     add_subdirectory(${PROJECT_SOURCE_DIR}/src/socket)
     add_subdirectory(${PROJECT_SOURCE_DIR}/src/server)
     add_subdirectory(${PROJECT_SOURCE_DIR}/src/client)
+
 endif (TEST)
