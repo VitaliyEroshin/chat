@@ -22,6 +22,7 @@ struct ObjectTree {
   int frontId() const;
   void pushFront(Object object);
   void pushBack(Object object);
+  void propagateIdFromBack();
 
   ObjectTree();
   ~ObjectTree() = default;
@@ -68,6 +69,9 @@ private:
 
   void parseTextObject(Object object);
   void readServer();
+
+  void quit();
+  void parseInputCommand(const std::string& command);
   void readUserInput();
   void refreshOutput();
 

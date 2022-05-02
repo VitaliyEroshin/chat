@@ -94,7 +94,7 @@ void Client::setupAddress() {
       port = std::stoi(port_str);
       ip = ip_str;
     } catch (...) {
-      log << "User entered not a number. Asking him again...\n";
+      log << "User entered not a number. Asking him again..." << std::endl;
       continue;
     }
   }
@@ -391,6 +391,7 @@ void Client::parseTextObject(Object object) {
   if (object.hasReturnCode(kChatSwitched)) {
     data.clear();
     sendCommand("/scrollup");
+
   } else if (data.objects.empty()) {
     data.insert(object);
     scroll = false;
@@ -411,16 +412,9 @@ void Client::parseTextObject(Object object) {
   } else if (data.objects.back().hasReturnCode(kCommandCallback) &&
              object.hasReturnCode(kHistoricMessage)) {
     data.objects.push_back(object);
-    auto it = --data.objects.end();
-    while ((*it).hasReturnCode() && (*it).code == kCommandCallback) {
-      (*it).setPrev(data.objects.back().id);
-      (*it).setId(data.objects.back().id);
-      if (it == data.objects.begin()) {
-        break;
-      }
-    }
-  } else if (data.objects.front().hasReturnCode() &&
-             data.objects.front().code == kCommandCallback) {
+    data.propagateIdFromBack();
+
+  } else if (data.objects.front().hasReturnCode(kCommandCallback)) {
     data.objects.push_front(object);
   }
 
@@ -435,57 +429,64 @@ void Client::readServer() {
     std::string encoded = socket.read();
 
     if (encoded.empty()) {
-      // Disconnected.
+      log << "Disconnected from the server :c" << std::endl;
       run.store(false);
       return;
     }
 
     Object object = encoder.decode(encoded);
-    if (object.type == Object::Type::text) {
+
+    if (object.type == Object::Type::text)
       parseTextObject(object);
-    }
+
   }
 }
 
+void Client::quit() {
+  run.store(false);
+  socket.~Socket();
+}
+
+void Client::parseInputCommand(const std::string& command) {
+  if (command == "/quit")
+    quit();
+
+  else if (command == "/refresh")
+    initializeGUI();
+
+  else if (command[0] == '/')
+    sendCommand(command);
+   
+  else if (!command.empty())
+    sendText(command);
+
+}
+
 void Client::readUserInput() {
+  const size_t
+    chatBottomPadding = 1,
+    chatOffsetV = ui.getWindowHeight()
+      - chatBottomPadding
+      - chatspace,
+    chatOffsetH = 4;
+
   chatspace = 1;
   while (run.load()) {
     drawChatPointer();
     std::string command = ui.input(
-      {ui.getWindowHeight() - 1 - chatspace, 4},
-      {chatspace, ui.getWindowWidth() - 8}, 
+      {chatOffsetV, chatOffsetH},
+      {chatspace, ui.getWindowWidth() - 2 * chatOffsetH}, 
       true
     );
 
-    ui.print(
-      {ui.getWindowHeight() - 1 - chatspace, 4}, 
-      {chatspace, ui.getWindowWidth() - 4}, 
-      ""
+    ui.clearSpace(
+      {chatOffsetV, chatOffsetH}, 
+      {chatspace, ui.getWindowWidth() - chatOffsetH}
     );
 
     chatspace = 1;
 
-    if (command == "/quit") {
-      ui.~UserInterface();
-      run.store(false);
-      socket.~Socket();
-      return;
-    }
-
-    if (command == "/refresh") {
-      initializeGUI();
-      continue;
-    }
-
-    if (command[0] == '/') {
-      sendCommand(command);
-      continue;
-    }
-    if (command.empty()) {
-      continue;
-    }
-
-    sendText(command);
+    parseInputCommand(command);
   }
 }
 
@@ -533,6 +534,19 @@ void ObjectTree::pushFront(Object object) {
 
 void ObjectTree::pushBack(Object object) {
   objects.push_back(object);
+}
+
+void ObjectTree::propagateIdFromBack() {
+  const size_t
+    kCommandCallback = 4;
+
+  auto it = --objects.end();
+  while ((*it).hasReturnCode(kCommandCallback)) {
+    (*it).setPrev(backId());
+    (*it).setId(backId());
+
+    if (it == objects.begin()) break;
+  }
 }
 
 void Client::scrollup() {
