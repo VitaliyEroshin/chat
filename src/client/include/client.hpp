@@ -16,6 +16,7 @@ struct ObjectTree {
   std::list<Object>::iterator head;
 
   void insert(const Object& obj);
+  void clear();
   ObjectTree();
   ~ObjectTree() = default;
 };

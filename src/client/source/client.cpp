@@ -299,8 +299,11 @@ void Client::readServer() {
     Object object = encoder.decode(encoded);
     if (object.type == Object::Type::text) {
       bool scroll = (data.head == data.objects.begin());
-
-      if (data.objects.empty()) {
+      
+      if (object.hasReturnCode() && object.code == 6) {
+        data.clear();
+        sendCommand("/scrollup");
+      } else if (data.objects.empty()) {
         if (object.hasReturnCode() && object.code == kCommandCallback) {
           object.setId(-1);
         }
@@ -393,6 +396,11 @@ void ObjectTree::insert(const Object& obj) {
     objects.insert(it, obj);
     --head;
   }
+}
+
+void ObjectTree::clear() {
+  objects.clear();
+  head = objects.begin();
 }
 
 ObjectTree::ObjectTree() {

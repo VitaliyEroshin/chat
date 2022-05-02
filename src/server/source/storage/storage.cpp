@@ -344,6 +344,11 @@ Object SmartStorage::getMessage(int id, Encoder& encoder) {
 Object SmartStorage::getLastMessage(Encoder& encoder, chatid_t chatid) {
   Block& block = data["chats"][std::to_string(chatid)];
   int id = std::stoi(block[1]);
+  if (id == 0) {
+    Object obj;
+    obj.setReturnCode(-1);
+    return obj;
+  }
   return getMessage(id, encoder);
 }
 

@@ -90,6 +90,7 @@ void Server::switchChatHandler(Object& callback, Connection& user, std::stringst
     callback.content = "You are not a member of the chat";
   } else {
     callback.content = "You have succesfully switched the chat";
+    callback.setReturnCode(6);
   }
 }
 
@@ -167,36 +168,44 @@ void Server::addMessageHandler(Object& object, Connection& user, std::stringstre
 
 void Server::scrollUpHandler(Object& object, Connection& user, std::stringstream& ss) {
   chatid_t chat = storage.getChat(user.user);
-  object = storage.getLastMessage(encoder, chat);
-  if (!object.hasId()) {
+  if (chat == 0) {
     return;
   }
-  // chatid_t chat = storage.getMessageChatid(object.id);
+  auto lastMessage = storage.getLastMessage(encoder, chat);
+  if (lastMessage.code == -1) {
+    object.content = "This is the beginning of chat.";
+    object.setReturnCode(4);
+    return;
+  }
+
+  if (!lastMessage.hasId()) {
+    return;
+  }
+
   if (!storage.isMember(chat, user.user)) {
     return;
   }
-  Object obj = storage.getMessage(object.id, encoder);
+  Object obj = storage.getMessage(lastMessage.id, encoder);
   const size_t
     kHistoricMessage = 5;
 
   obj.setReturnCode(kHistoricMessage);
   obj.type = Object::Type::text;
+  cstd::usleep(20);
   user.socket->send(encoder.encode(obj));
 
-  const size_t callbackSize = 20;
+  const size_t callbackSize = 40;
   for (size_t i = 0; i < callbackSize; ++i) {
     obj = storage.getMessage(obj.prev, encoder);
     obj.setReturnCode(kHistoricMessage);
     if (!obj.hasPrev() || obj.prev == 0) {
       break;
     }
-    cstd::usleep(100);
+    cstd::usleep(20);
     user.socket->send(encoder.encode(obj));
-    
-
   }
   object = obj;
-  cstd::usleep(100);
+  cstd::usleep(20);
 }
 
 void Server::scrollDownHandler(Object& object, Connection& user, std::stringstream& ss) {
