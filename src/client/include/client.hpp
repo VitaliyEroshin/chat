@@ -17,7 +17,11 @@ struct ObjectTree {
 
   void insert(const Object& obj);
   void clear();
-  bool isMessage(std::list<Object>::iterator message);
+  bool isMessage(std::list<Object>::iterator message) const;
+  int backId() const;
+  int frontId() const;
+  void pushFront(Object object);
+  void pushBack(Object object);
 
   ObjectTree();
   ~ObjectTree() = default;
@@ -56,10 +60,13 @@ private:
   void sendText(const std::string& text);
   void sendCommand(const std::string& text);
 
+  void delay(const std::string& label);
+  void showConnectionVerdict(const std::string& verdict);
   int connect();
   void showBackground(std::atomic<bool>& connecting);
   void listen();
 
+  void parseTextObject(Object object);
   void readServer();
   void readUserInput();
   void refreshOutput();

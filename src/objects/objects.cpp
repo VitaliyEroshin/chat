@@ -74,3 +74,6 @@ bool Object::hasNext() const
 
 bool Object::hasReturnCode() const 
 { return bit(attributes, 7); }
+
+bool Object::hasReturnCode(int code_) const
+{ return hasReturnCode() && code == code_; }

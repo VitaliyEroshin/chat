@@ -41,4 +41,6 @@ struct Object {
   bool hasPrev() const;
   bool hasNext() const;
   bool hasReturnCode() const;
+  
+  bool hasReturnCode(int code_) const;
 };
