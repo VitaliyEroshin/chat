@@ -1,11 +1,12 @@
 #include "client.hpp"
 
-Client::Client(Encoder& encoder, fs::Config& config)
+Client::Client(Encoder& encoder, fs::Config& config, Logger& logger)
     : status(Status::offline), 
       config(config), 
       socket(Socket(config.get<int>("port"))), 
       ui(UserInterface(*this)), 
-      encoder(encoder) 
+      encoder(encoder),
+      log(logger)
 {}
 
 bool Client::setAddress(std::string ip, int port) {
@@ -32,7 +33,7 @@ std::pair<std::string, std::string> Client::askAddress() {
   const size_t
     portOffsetH = 1,
     portOffsetV = 1,
-    portBoxH = 4,
+    portBoxH = 5,
     portBoxV = 1;
 
   std::string port = ui.askForm(
@@ -44,22 +45,52 @@ std::pair<std::string, std::string> Client::askAddress() {
   return std::make_pair(ip, port);
 }
 
+void Client::showAddressHint() {
+  const size_t 
+    verdictOffsetV = 4,
+    verdictOffsetH = 4;
+
+  ui.print(
+    {verdictOffsetV, verdictOffsetH},
+    "Oops! You have entered wrong address."
+  );
+
+  const size_t
+    hintOffsetV = 6,
+    hintOffsetH = 2;
+
+  const std::string
+    boldOn = "\e[0m",
+    boldOff = "\e[1m";
+
+  ui.printLines(
+    {hintOffsetV, hintOffsetH}, 
+    {
+      "+--------+------------------------------------+",
+      "|  HINT  |                                    |",
+      "+--------+                                    |",
+      "|                                             |",
+      "|      IP address should be localhost or      |",
+      "|  follow the pattern (X.X.X.X) where X       |",
+      "|  is a number between 0 and 255.             |",
+      "|                                             |",
+      "|      A port number is a 16-bit unsigned     |",
+      "|  integer, thus ranging from 0 to 65535      |",
+      "|                                             |",
+      "+---------------------------------------------+"
+    }
+  );
+}
+
 void Client::setupAddress() {
   std::string ip;
   int port;
   bool hint = false;
   while (!setAddress(ip, port)) {
     ui.clearWindow();
-    if (hint) {
-      const size_t
-        hintOffsetH = 4,
-        hintOffsetV = 4;
+    if (hint)
+      showAddressHint();
 
-      ui.print(
-        {hintOffsetV, hintOffsetH}, 
-        "IP or port invalid. Please, try again."
-      );
-    }
     hint = true;
     
     auto [ip_str, port_str] = askAddress();
@@ -67,6 +98,7 @@ void Client::setupAddress() {
       port = std::stoi(port_str);
       ip = ip_str;
     } catch (...) {
+      log << "User entered not a number. Asking him again...\n";
       continue;
     }
   }
@@ -75,16 +107,19 @@ void Client::setupAddress() {
 }
 
 int Client::connectToHost() {
-  return cstd::connect(socket.descriptor, (cstd::sockaddr*)&(socket.address), sizeof(socket.address));
+  return cstd::connect(
+    socket.descriptor, 
+    (cstd::sockaddr*)&(socket.address), 
+    sizeof(socket.address)
+  );
 }
 
 std::pair<std::string, std::string> Client::askAuthData() {
-  // H - for horizontal, V - for vertical
   const size_t 
-    usernameOffsetH = 1,
     usernameOffsetV = 1,
-    usernameBoxH = 12,
-    usernameBoxV = 1;
+    usernameOffsetH = 1,
+    usernameBoxV = 1,
+    usernameBoxH = 12;
 
   std::string username = ui.askForm(
     {usernameOffsetV, usernameOffsetH}, 
@@ -93,10 +128,10 @@ std::pair<std::string, std::string> Client::askAuthData() {
   );
 
   const size_t
-    passwordOffsetH = 1,
     passwordOffsetV = 1,
-    passwordBoxH = 12,
-    passwordBoxV = 1;
+    passwordOffsetH = 1,
+    passwordBoxV = 1,
+    passwordBoxH = 12;
 
   std::string password = ui.askForm(
     {usernameOffsetV + passwordOffsetV, passwordOffsetH}, 
@@ -180,27 +215,66 @@ int ceil(int a, int b) {
   return (a + b - 1) / b;
 }
 
-void Client::refreshMessages() {
-  size_t space = ui.getWindowHeight() - 3 - chatspace;
-  size_t width = ui.getWindowWidth() - 2;
-  ui.print({1, 1}, {space, width}, "");
-  auto it = data.head;
+bool Client::printMessage(size_t& space, size_t width, const std::string& message) {
+  const size_t
+    messageBoxTopPadding = 1,
+    messageBoxLeftPadding = 1;
 
-  while (it != data.objects.end()) {
-    std::stringstream ss((*it).content);
-    std::string s;
-    while (std::getline(ss, s)) {
-      size_t length = UserInterface::getTextRealSize(s);
-      size_t height = ceil(length, width - 2);
+  std::stringstream stream(message);
+  std::string buffer;
+  while (std::getline(stream, buffer)) {
+      size_t length = UserInterface::getTextRealSize(buffer);
+      size_t height = ceil(length, width);
+
       if (space < height)
-        return;
+        return false;
 
-      ui.print({space - height + 1, 1}, {height, width - 2}, s);
+      ui.print(
+        {space - height + messageBoxLeftPadding, messageBoxTopPadding}, 
+        {height, width}, 
+        buffer
+      );
       space -= height;
+  }
+  return true;
+}
+
+void Client::refreshMessages() {
+  const size_t
+    messageBoxTopPadding = 1,
+    messageBoxBottomPadding = 1,
+    chatBoxBottomPadding = 1,
+    messageBoxLeftPadding = 1,
+    messageBoxRightPadding = 1;
+
+  size_t space = 
+    ui.getWindowHeight()
+    - chatBoxBottomPadding
+    - chatspace
+    - messageBoxBottomPadding
+    - messageBoxTopPadding;
+
+  size_t width = 
+    ui.getWindowWidth()
+    - messageBoxLeftPadding
+    - messageBoxRightPadding;
+
+  ui.clearSpace(
+    {messageBoxTopPadding, messageBoxLeftPadding}, 
+    {space, width}
+  );
+
+  auto message = data.head;
+
+  while (data.isMessage(message)) {
+    if (!printMessage(space, width, (*message).content)) {
+      return;
     }
-    ++it;
+
+    ++message;
   }
 }
+
 
 int Client::session() {
   if (connect() < 0)
@@ -405,6 +479,10 @@ void ObjectTree::clear() {
 
 ObjectTree::ObjectTree() {
   head = objects.begin();
+}
+
+bool ObjectTree::isMessage(std::list<Object>::iterator message) {
+  return message != objects.end();
 }
 
 void Client::scrollup() {
