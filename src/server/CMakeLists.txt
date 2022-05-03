@@ -19,3 +19,9 @@ set_target_properties(server
     PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin
 )
+
+install(
+    TARGETS server
+    RUNTIME DESTINATION exe/bin
+    LIBRARY DESTINATION exe/lib
+)

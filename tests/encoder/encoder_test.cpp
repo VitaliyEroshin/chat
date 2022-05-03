@@ -48,6 +48,20 @@ TEST(encoder, largeText) {
   ASSERT_EQ(sent.type, received.type);
 }
 
+TEST(encoder, russianText) {
+  Enc enc;
+  Object sent;
+  sent.type = Object::Type::text;
+  sent.content = "Привет мир!";
+  sent.setId(0);
+
+  Object received = enc.decode(enc.encode(sent));
+
+  ASSERT_EQ(sent.content, received.content);
+  ASSERT_EQ(sent.id, received.id);
+  ASSERT_EQ(sent.type, received.type);
+}
+
 TEST(encoder, command) {
   Enc enc;
   Object sent;

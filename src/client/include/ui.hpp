@@ -3,6 +3,7 @@
 #include <string>
 #include <deque>
 #include <mutex>
+#include <vector>
 
 #include <sys/ioctl.h>
 #include <unistd.h>
@@ -63,10 +64,23 @@ public:
   struct Input {
     struct Buffer {
       std::deque<output_char_t> right;
+      std::deque<int> rightWidth;
       output_t left;
+      std::deque<int> leftWidth;
 
-      void moveLeft();
-      void moveRight();
+      size_t rightSize = 0;
+      size_t leftSize = 0;
+      size_t leftWidthSum = 0;
+      size_t rightWidthSum = 0;
+
+      void pushLeft(char c, int sz);
+      void pushRight(char c, int sz);
+
+      void popLeft(bool popWidth = false);
+      void popRight(bool popWidth = false);
+
+      int moveLeft();
+      int moveRight();
       void moveLeftAll();
       output_t getRight();
     };
@@ -97,10 +111,14 @@ public:
   [[maybe_unused]] void testWindowCorners();
 
   void print(const output_t& s);
-  void print(output_char_t c);
+  int print(output_char_t c, bool move = true);
   void print(Cursor::Position pivot, Cursor::Position size, const output_t& text);
   void print(Cursor::Position pivot, const output_t& text);
-
+  void printLines(Cursor::Position pivot, const std::vector<std::string>& lines);
+  void clearSpace(Cursor::Position pivot, Cursor::Position size);
+  
+  static int characterSize(char c);
+  static size_t getTextRealSize(const std::string& s);
   output_t input(Cursor::Position pivot, Cursor::Position size, bool dynamic = false);
   output_t askForm(Cursor::Position pivot, Cursor::Position size, const output_t& text);
 

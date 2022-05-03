@@ -1,0 +1,4 @@
+|                     |                                          |
+|   /addfriend {id}   |    add user to your friendlist by id.    |
+|   /myid             |    show your account id.                 |
+|   /friends          |    view your friendlist.                 |

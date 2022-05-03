@@ -15,7 +15,7 @@ struct Object {
   char attributes = 0;
   int id;
   int author;
-  int timestamp;
+  int64_t timestamp;
   int thread;
   int reply;
   int prev;
@@ -26,7 +26,7 @@ struct Object {
 
   void setId(int id_);
   void setAuthor(int author_);
-  void setTimestamp(int timestamp_);
+  void setTimestamp(int64_t timestamp_);
   void setThread(int thread_);
   void setReply(int reply_);
   void setPrev(int prev_);
@@ -41,4 +41,6 @@ struct Object {
   bool hasPrev() const;
   bool hasNext() const;
   bool hasReturnCode() const;
+  
+  bool hasReturnCode(int code_) const;
 };

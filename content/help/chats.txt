@@ -1,0 +1,6 @@
+|                     |                                          |
+|   /chat             |    view your current chat id.            |
+|   /makechat         |    make a new chat.                      |
+|   /invite {id}      |    invite user to the chat you are in.   |
+|   /switchchat {id}  |    switch your chat by chatid.           |
+|   /chats            |    view available chats.                 |

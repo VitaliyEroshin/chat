@@ -1,4 +1,5 @@
 #include "server.hpp"
+#include <chrono>
 
 void Server::initHandlers() {
     addHandler("/addfriend", &Server::addFriendHandler);
@@ -89,6 +90,7 @@ void Server::switchChatHandler(Object& callback, Connection& user, std::stringst
     callback.content = "You are not a member of the chat";
   } else {
     callback.content = "You have succesfully switched the chat";
+    callback.setReturnCode(6);
   }
 }
 
@@ -127,20 +129,38 @@ void Server::getChatsHandler(Object& callback, Connection& user, std::stringstre
 }
 
 void Server::getHelpHandler(Object& callback, Connection& user, std::stringstream& ss) {
-  callback.content = fs::loadContent("./content/help.txt");
+  callback.content = fs::loadContent("./content/help/header.txt");
+  user.socket->send(encoder.encode(callback));
+  callback.content = fs::loadContent("./content/help/friends.txt");
+  user.socket->send(encoder.encode(callback));
+  callback.content = fs::loadContent("./content/help/chats.txt");
+  user.socket->send(encoder.encode(callback));
+  callback.content = fs::loadContent("./content/help/other.txt");
+  user.socket->send(encoder.encode(callback));
+  callback.content = fs::loadContent("./content/help/footer.txt");
 }
 
 void Server::getAboutHandler(Object& callback, Connection& user, std::stringstream& ss) {
   callback.content = fs::loadContent("./content/about.txt");
 }
 
+uint64_t getTimestamp() {
+  using namespace std::chrono;
+  auto timestamp = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+  return timestamp;
+}
+
 void Server::addMessageHandler(Object& object, Connection& user, std::stringstream& ss) {
   chatid_t chat = storage.getChat(user.user);
-  log << "Received message from " << user.user << " with content \"" << object.content << "\"\n";
-  object.setAuthor(user.user);
+  
+  // TODO
+  // auto timestamp = getTimestamp();
+  // object.setTimestamp(timestamp);
+
   object.content = "[" + storage.getUserNickname(user.user) + "] " + object.content;
   if (chat != 0) {
-    storage.addMessage(object, encoder, chat);
+    int id = storage.addMessage(object, encoder, chat);
+    object = storage.getMessage(id, encoder);
   } else {
     object.setReturnCode(4);
   }
@@ -149,38 +169,51 @@ void Server::addMessageHandler(Object& object, Connection& user, std::stringstre
     if (storage.getChat(other.user) != storage.getChat(user.user)) {
       continue;
     }
-    log << "Trying to send this to " << other.user << "\n";
+
     other.socket->send(encoder.encode(object));
   }
 }
 
 void Server::scrollUpHandler(Object& object, Connection& user, std::stringstream& ss) {
-  log << "User " << user.user << " asked for scrollup.\n";
   chatid_t chat = storage.getChat(user.user);
-  log << "Currently, user is in " << chat << ". Getting last message.\n";
-  object = storage.getLastMessage(encoder, chat);
-  if (!object.hasId()) {
-    log << "Catched object does not have id. Ignoring.\n";
+  if (chat == 0) {
     return;
   }
-  // chatid_t chat = storage.getMessageChatid(object.id);
+  auto lastMessage = storage.getLastMessage(encoder, chat);
+  if (lastMessage.code == -1) {
+    object.content = "This is the beginning of chat.";
+    object.setReturnCode(4);
+    return;
+  }
+
+  if (!lastMessage.hasId()) {
+    return;
+  }
+
   if (!storage.isMember(chat, user.user)) {
-    log << "User is not a member of " << chat << ". Ignoring.\n";
     return;
   }
-  log << "Sending messages: \n";
-  Object obj = storage.getMessage(object.id, encoder);
+  Object obj = storage.getMessage(lastMessage.id, encoder);
+  const size_t
+    kHistoricMessage = 5;
+
+  obj.setReturnCode(kHistoricMessage);
   obj.type = Object::Type::text;
+  cstd::usleep(20);
   user.socket->send(encoder.encode(obj));
-  log << "Sent " << obj.content << "\n";
-  for (size_t i = 0; i < 3; ++i) {
+
+  const size_t callbackSize = 40;
+  for (size_t i = 0; i < callbackSize; ++i) {
+    obj = storage.getMessage(obj.prev, encoder);
+    obj.setReturnCode(kHistoricMessage);
     if (!obj.hasPrev() || obj.prev == 0) {
       break;
     }
-    obj = storage.getMessage(obj.prev, encoder);
+    cstd::usleep(20);
     user.socket->send(encoder.encode(obj));
-    log << "Sent " << obj.content << "\n";
   }
+  object = obj;
+  cstd::usleep(20);
 }
 
 void Server::scrollDownHandler(Object& object, Connection& user, std::stringstream& ss) {
