@@ -199,7 +199,7 @@ void Server::scrollUpHandler(Object& object, Connection& user, std::stringstream
 
   obj.setReturnCode(kHistoricMessage);
   obj.type = Object::Type::text;
-  cstd::usleep(20);
+
   user.socket->send(encoder.encode(obj));
 
   const size_t callbackSize = 40;
@@ -209,11 +209,11 @@ void Server::scrollUpHandler(Object& object, Connection& user, std::stringstream
     if (!obj.hasPrev() || obj.prev == 0) {
       break;
     }
-    cstd::usleep(20);
+
     user.socket->send(encoder.encode(obj));
   }
   object = obj;
-  cstd::usleep(20);
+
 }
 
 void Server::scrollDownHandler(Object& object, Connection& user, std::stringstream& ss) {

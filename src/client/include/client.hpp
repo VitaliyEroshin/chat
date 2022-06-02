@@ -5,6 +5,8 @@
 #include <thread>
 #include <vector>
 #include <list>
+#include <algorithm>
+
 #include "socket.hpp"
 #include "encoder.hpp"
 #include "ui.hpp"
