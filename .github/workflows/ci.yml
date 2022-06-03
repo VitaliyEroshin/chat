@@ -2,7 +2,6 @@ name: Test & Build
 
 on:
   workflow_dispatch:
-  push:
 
 jobs:
   build:
@@ -42,6 +41,7 @@ jobs:
         cmake .. -DTEST=off -DCMAKE_INSTALL_PREFIX="./package/"
         make
         make install
+        cp -r ../../../config config
 
     - name: UploadArtifacts
       uses: actions/upload-artifact@v3
