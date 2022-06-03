@@ -43,4 +43,6 @@ struct Object {
   bool hasReturnCode() const;
   
   bool hasReturnCode(int code_) const;
+
+  std::string info() const;
 };

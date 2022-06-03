@@ -418,9 +418,10 @@ void Client::parseTextObject(Object object) {
     data.objects.push_front(object);
   }
 
+  update.store(true);
+  
   if (scroll) {
     scrolldown();
-    update.store(true);
   }
 }
 
