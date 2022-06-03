@@ -3,6 +3,7 @@
 #include <string>
 #include <deque>
 #include <mutex>
+#include <vector>
 
 #include <sys/ioctl.h>
 #include <unistd.h>

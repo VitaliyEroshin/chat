@@ -23,3 +23,9 @@ set_target_properties(client
     PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin
 )
+
+install(
+    TARGETS client
+    RUNTIME DESTINATION exe/bin
+    LIBRARY DESTINATION exe/lib
+)
