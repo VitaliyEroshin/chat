@@ -77,6 +77,8 @@ private:
   void readUserInput();
   void refreshOutput();
 
+  void getPreviousMessages();
+
   void scrollup();
   void scrolldown();
 

@@ -343,7 +343,9 @@ int SmartStorage::addMessage(Object object, Encoder& encoder, chatid_t chatid) {
   } catch (...) {
     log << "Failed stoi in addMessage, value=[" << block[1] << "]" << std::endl;
   }
-  object.setPrev(prev);
+  if (prev)
+    object.setPrev(prev);
+
   int id = getMessageCount() + 1;
   object.setId(id);
   ++messageCount;

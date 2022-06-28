@@ -241,6 +241,8 @@ bool Client::printMessage(size_t& space, size_t width, const std::string& messag
 }
 
 void Client::refreshMessages() {
+  static std::mutex mtx;
+  std::lock_guard<std::mutex> lock(mtx);
   const size_t
     messageBoxTopPadding = 1,
     messageBoxBottomPadding = 1,
@@ -272,7 +274,12 @@ void Client::refreshMessages() {
       return;
     }
 
+    auto prev = message;
     ++message;
+    if (!data.isMessage(message) && (*prev).hasPrev()) {
+      getPreviousMessages();
+      return;
+    }
   }
 }
 
@@ -455,6 +462,9 @@ void Client::parseInputCommand(const std::string& command) {
   else if (command == "/refresh")
     initializeGUI();
 
+  else if (command == "/scrollback")
+    getPreviousMessages();
+
   else if (command[0] == '/')
     sendCommand(command);
    
@@ -548,6 +558,14 @@ void ObjectTree::propagateIdFromBack() {
 
     if (it == objects.begin()) break;
   }
+}
+
+void Client::getPreviousMessages() {
+  Object object;
+  object.content = "/scrollup";
+  object.setId(data.backId());
+  object.type = Object::Type::command;
+  socket.send(encoder.encode(object));
 }
 
 void Client::scrollup() {

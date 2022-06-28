@@ -157,7 +157,7 @@ void Server::parseCommand(const Object& object, Connection& user) {
 
   Object callback;
   callback.type = Object::Type::text;
-  callback.setId(0);
+  callback.setId((object.hasId() ? object.id : 0));
 
   const int kCommandCallback = 4;
   callback.setReturnCode(kCommandCallback);
