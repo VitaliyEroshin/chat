@@ -15,25 +15,10 @@ int main() {
   fs::Config config(log);
   config.load("./config/server.cfg");
 
-  SmartStorage storage("./config/storage.cfg", log);
   StrEncoder encoder;
+  SmartStorage storage("./config/storage.cfg", log, encoder);
 
   Server server(config.get<int>("port"), storage, encoder, log);
 
   server.loop();
-
-  // storage.addUser("aboba", "great_password");
-  // storage.createChat(1);
-  // Object obj;
-  // obj.type = Object::Type::text;
-  // obj.content = "Hello world!";
-  // storage.addMessage(obj, encoder, 1);
-  // cstd::sleep(2);
-  // storage.addMessage(obj, encoder, 1);
-  // storage.addMessage(obj, encoder, 1);
-  // storage.addMessage(obj, encoder, 1);
-
-  // obj = storage.getMessage(2, encoder);
-  // print(obj);
-  // std::cout << "Prev: " << obj.prev << "\n"; 
 }

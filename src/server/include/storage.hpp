@@ -125,7 +125,7 @@ public:
   int addFriend(userid_t selfId, userid_t target) override;
 
   void addModule(const std::string& alias, size_t lruSize);
-  SmartStorage(const std::string& configPath, Logger& logger);
+  SmartStorage(const std::string& configPath, Logger& logger, Encoder& encoder);
 
   std::string getUserNickname(userid_t id) override;
 
@@ -164,5 +164,6 @@ private:
 
   Logger& log;
   fs::Config config;
+  Encoder& encoder;
   std::unordered_map<std::string, LRUCache> data;
 };

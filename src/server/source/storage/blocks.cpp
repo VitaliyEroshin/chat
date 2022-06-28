@@ -42,7 +42,15 @@ Block::Block(const std::string& path, const std::string& block)
   std::ifstream stream(path);
   std::string s;
   std::getline(stream, s);
-  block_size = std::stoi(s);
+  try {
+    block_size = std::stoi(s);
+  } catch (...) {
+    std::cerr << "Unable stoi in Block construction" << std::endl;
+    std::cerr << "path: " << path << std::endl;
+    std::cerr << "blocksize[" << s << "]" << std::endl;
+    throw;
+  }
+  
   for (size_t i = 0; i < block_size; ++i) {
     std::getline(stream, s);
     data.push_back(s);
