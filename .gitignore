@@ -42,6 +42,7 @@ cmake-build-debug
 
 # Runtime data
 data
+**/__pycache__/*
 
 # Other
 *.DS_Store
