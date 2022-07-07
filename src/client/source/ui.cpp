@@ -57,6 +57,19 @@ void UserInterface::print(
   print(pivot, {1, getTextRealSize(text)}, text);
 }
 
+void UserInterface::printLines(
+  Cursor::Position pivot, const std::vector<std::string>& lines) {
+
+  for (const auto &x : lines) {
+    print(pivot, x);
+    ++pivot.x;
+  }
+}
+
+void UserInterface::clearSpace(Cursor::Position pivot, Cursor::Position size) {
+  print(pivot, size, "");
+}
+
 void UserInterface::log(size_t cell, output_t s) {
   print({getWindowHeight() - 1, getWindowWidth() - 21 - 20 * cell}, {1, 20}, s);
   out.flush();

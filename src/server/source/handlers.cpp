@@ -129,7 +129,15 @@ void Server::getChatsHandler(Object& callback, Connection& user, std::stringstre
 }
 
 void Server::getHelpHandler(Object& callback, Connection& user, std::stringstream& ss) {
-  callback.content = fs::loadContent("./content/help.txt");
+  callback.content = fs::loadContent("./content/help/header.txt");
+  user.socket->send(encoder.encode(callback));
+  callback.content = fs::loadContent("./content/help/friends.txt");
+  user.socket->send(encoder.encode(callback));
+  callback.content = fs::loadContent("./content/help/chats.txt");
+  user.socket->send(encoder.encode(callback));
+  callback.content = fs::loadContent("./content/help/other.txt");
+  user.socket->send(encoder.encode(callback));
+  callback.content = fs::loadContent("./content/help/footer.txt");
 }
 
 void Server::getAboutHandler(Object& callback, Connection& user, std::stringstream& ss) {
@@ -150,8 +158,11 @@ void Server::addMessageHandler(Object& object, Connection& user, std::stringstre
   // object.setTimestamp(timestamp);
 
   object.content = "[" + storage.getUserNickname(user.user) + "] " + object.content;
+  
   if (chat != 0) {
+    log << "Attaching object " << object.info();
     int id = storage.addMessage(object, encoder, chat);
+    log << "OK" << std::endl;
     object = storage.getMessage(id, encoder);
   } else {
     object.setReturnCode(4);
@@ -185,27 +196,37 @@ void Server::scrollUpHandler(Object& object, Connection& user, std::stringstream
   if (!storage.isMember(chat, user.user)) {
     return;
   }
-  Object obj = storage.getMessage(lastMessage.id, encoder);
+
+  log << "Called scrollup " << object.info() << std::endl;
+
+  log << "In chat " << chat << std::endl; 
+
+  Object obj = storage.getMessage(object.id == 0 ? lastMessage.id : object.id, encoder);
+  
+  log << "Last message " << obj.info() << std::endl;
+
   const size_t
     kHistoricMessage = 5;
 
   obj.setReturnCode(kHistoricMessage);
   obj.type = Object::Type::text;
-  cstd::usleep(20);
-  user.socket->send(encoder.encode(obj));
 
-  const size_t callbackSize = 40;
+  if (object.id == 0)
+    user.socket->send(encoder.encode(obj));
+
+  const size_t callbackSize = 2;
   for (size_t i = 0; i < callbackSize; ++i) {
     obj = storage.getMessage(obj.prev, encoder);
     obj.setReturnCode(kHistoricMessage);
     if (!obj.hasPrev() || obj.prev == 0) {
       break;
     }
-    cstd::usleep(20);
+    log << "Sending... " << obj.info();
     user.socket->send(encoder.encode(obj));
+    log << "OK" << std::endl;
   }
   object = obj;
-  cstd::usleep(20);
+
 }
 
 void Server::scrollDownHandler(Object& object, Connection& user, std::stringstream& ss) {

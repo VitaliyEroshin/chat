@@ -11,9 +11,10 @@ void SmartStorage::addModule(const std::string& alias, size_t lruSize) {
   );
 }
 
-SmartStorage::SmartStorage(const std::string& configPath, Logger& logger)
-    : log(logger),
-      config(logger, configPath)
+SmartStorage::SmartStorage(const std::string& configPath, Logger& logger, Encoder& encoder)
+    : log(logger)
+    , config(logger, configPath)
+    , encoder(encoder)
 {
   const size_t lruSize = 2;
 
@@ -59,7 +60,14 @@ int SmartStorage::getUser(const login_t& login, const password_t& password) {
       return -2;
     }
     ss >> value;
-    return std::stoi(value);
+    try {
+      auto result = std::stoi(value);
+      return result;
+    } catch (...) {
+      log << "Unable stoi in getUser, value =[" << value << "]" << std::endl;
+      throw;
+    }
+    // return std::stoi(value);
   }
   return -1;
 }
@@ -76,10 +84,15 @@ int SmartStorage::getUserCount() {
     return 0;
   }
   Block& block = data["userdata"][blocksCount - 1];
-  std::stringstream ss(block[block.size()]);
+  std::stringstream ss(block[block.size() - 1]);
   std::string id;
   ss >> id;
-  userCount = std::stoi(id);
+  try {
+    userCount = std::stoi(id);
+  } catch (...) {
+    log << "Unable to stoi in getUserCount, id=[" << id << "]" << std::endl;
+    throw;
+  }
   return userCount;
 }
 
@@ -211,7 +224,14 @@ std::vector<chatid_t> SmartStorage::getUserChats(userid_t id) {
 
   std::vector<chatid_t> chatlist;
   while (ss >> chatId) {
-    chatlist.push_back(std::stoi(chatId));
+    try {
+      int chatId_ = std::stoi(chatId);
+      chatlist.push_back(chatId_);
+    } catch (...) {
+      log << "Failed stoi at getUserChats, chatid=[" << chatId << "]" << std::endl;
+      throw;
+    }
+    
   }
   return chatlist;
 }
@@ -223,7 +243,14 @@ std::vector<userid_t> SmartStorage::getUserFriends(userid_t id) {
 
   std::vector<userid_t> friendlist;
   while (ss >> friendId) {
-    friendlist.push_back(std::stoi(friendId));
+    try {
+      int friendId_ = std::stoi(friendId);
+      friendlist.push_back(friendId_);
+    } catch (...) {
+      log << "Failed stoi at getUserFriends, chatid=[" << friendId << "]" << std::endl;
+      throw;
+    }
+    
   }
   return friendlist;
 }
@@ -275,11 +302,11 @@ int SmartStorage::getMessageCount() {
     messageCount = 0;
     return 0;
   }
+  
   Block& block = data["messages"][blocksCount - 1];
-  std::stringstream ss(block[block.size() - 1]);
-  std::string id;
-  ss >> id;
-  messageCount = std::stoi(id);
+  std::string& s = block[block.size() - 1];
+  Object obj = encoder.decode(s);
+  messageCount = obj.id;
   return messageCount;
 }
 
@@ -310,9 +337,15 @@ void SmartStorage::setMessage(Object object, Encoder& encoder, chatid_t chatid) 
 
 int SmartStorage::addMessage(Object object, Encoder& encoder, chatid_t chatid) {
   Block& block = data["chats"][std::to_string(chatid)];
-  int prev = std::stoi(block[1]);
-  
-  object.setPrev(prev);
+  int prev = 0;
+  try {
+    prev = std::stoi(block[1]);
+  } catch (...) {
+    log << "Failed stoi in addMessage, value=[" << block[1] << "]" << std::endl;
+  }
+  if (prev)
+    object.setPrev(prev);
+
   int id = getMessageCount() + 1;
   object.setId(id);
   ++messageCount;
@@ -322,7 +355,6 @@ int SmartStorage::addMessage(Object object, Encoder& encoder, chatid_t chatid) {
     p.setNext(object.id);
     setMessage(p, encoder, chatid);
   }
-  
   setMessage(object, encoder, chatid);
   block[1] = std::to_string(object.id);
   block.save();
@@ -343,7 +375,14 @@ Object SmartStorage::getMessage(int id, Encoder& encoder) {
 
 Object SmartStorage::getLastMessage(Encoder& encoder, chatid_t chatid) {
   Block& block = data["chats"][std::to_string(chatid)];
-  int id = std::stoi(block[1]);
+  int id = 0;
+  try {
+    id = std::stoi(block[1]);
+  } catch (...) {
+    log << "Failed stoi at getLastMessage, value=[" << block[1] << "]" << std::endl;
+    throw;
+  }
+  
   if (id == 0) {
     Object obj;
     obj.setReturnCode(-1);
@@ -361,5 +400,12 @@ chatid_t SmartStorage::getMessageChatid(int id) {
     return -1;
   }
 
-  return std::stoi(s);
+  chatid_t chatid = 0;
+  try {
+    chatid = std::stoi(s);
+  } catch (...) {
+    log << "Failed stoi at getMessageChatid, value=[" << s << "]" << std::endl; 
+    throw;
+  }
+  return chatid;
 }

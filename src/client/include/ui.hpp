@@ -3,6 +3,7 @@
 #include <string>
 #include <deque>
 #include <mutex>
+#include <vector>
 
 #include <sys/ioctl.h>
 #include <unistd.h>
@@ -113,7 +114,9 @@ public:
   int print(output_char_t c, bool move = true);
   void print(Cursor::Position pivot, Cursor::Position size, const output_t& text);
   void print(Cursor::Position pivot, const output_t& text);
-
+  void printLines(Cursor::Position pivot, const std::vector<std::string>& lines);
+  void clearSpace(Cursor::Position pivot, Cursor::Position size);
+  
   static int characterSize(char c);
   static size_t getTextRealSize(const std::string& s);
   output_t input(Cursor::Position pivot, Cursor::Position size, bool dynamic = false);

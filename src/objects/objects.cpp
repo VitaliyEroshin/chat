@@ -74,3 +74,25 @@ bool Object::hasNext() const
 
 bool Object::hasReturnCode() const 
 { return bit(attributes, 7); }
+
+bool Object::hasReturnCode(int code_) const
+{ return hasReturnCode() && code == code_; }
+
+std::string Object::info() const {
+  std::string s = "[\n";
+  s += "  content: \"" + content + "\"\n";
+  if (hasPrev())
+    s += "  prev_id: " + std::to_string(prev) + "\n";
+
+  if (hasNext())
+    s += "  next_id: " + std::to_string(next) + "\n";
+  
+  if (hasId())
+    s += "  self_id: " + std::to_string(id) + "\n";
+
+  if (hasReturnCode())
+    s += "  return_code: " + std::to_string(code) + "\n";
+
+  s += "]\n";
+  return s;
+}
