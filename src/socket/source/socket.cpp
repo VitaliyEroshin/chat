@@ -45,8 +45,10 @@ std::pair<cstd::sockaddr*, unsigned int*> Socket::getAddress() {
 }
 
 void Socket::send(const std::string& message) const {
-  buffer[0] = message.size() % 256;
-  buffer[1] = message.size() / 256;
+  static const int modulo = 127;
+  buffer[0] = message.size() % modulo;
+  buffer[1] = message.size() / modulo;
+
   cstd::send(descriptor, buffer, 2, 0);
   cstd::send(descriptor, message.c_str(), message.size(), 0);
 }
@@ -67,8 +69,9 @@ std::string Socket::read() const {
   if (ok < 0 || ok > bufferSize) {
     return "";
   }
-  size_t length = buffer[0] + buffer[1] * 256;
 
+  static const int modulo = 127;
+  size_t length = buffer[0] + buffer[1] * modulo;
   int bytes = cstd::read(descriptor, buffer, length);
   
   if (bytes < 0 || bytes > bufferSize) {
