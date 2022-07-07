@@ -84,7 +84,7 @@ int SmartStorage::getUserCount() {
     return 0;
   }
   Block& block = data["userdata"][blocksCount - 1];
-  std::stringstream ss(block[block.size()]);
+  std::stringstream ss(block[block.size() - 1]);
   std::string id;
   ss >> id;
   try {
