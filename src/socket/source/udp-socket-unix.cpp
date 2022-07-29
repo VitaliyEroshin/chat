@@ -36,23 +36,12 @@ std::string UdpSocket::get_ip_address() {
   return get_ip_address(address);
 }
 
-
-#include <cstring> // memcpy
-#include <iostream>
-
 void UdpSocket::send(const std::string& message, Address& destination) const {
-//  static const int modulo = 127;
-//  buffer[0] = message.size() % modulo;
-//  buffer[1] = message.size() / modulo;
-
-//  memcpy(buffer + 2, message.c_str(), message.size());
-
   destination.len = sizeof(destination.addr);
-  std::cerr << "Sending " << message << std::endl;
   sendto(
           descriptor,
-          message.c_str(), // buffer
-          message.size(), // 2 + msg.size()
+          message.c_str(),
+          message.size(),
           0,
           reinterpret_cast<sockaddr*>(&destination.addr),
           destination.len
@@ -65,22 +54,6 @@ void UdpSocket::send(const std::string& message) {
 
 std::pair<std::string, Address> UdpSocket::read() const {
   Address addr;
-//  int ok = recvfrom(
-//          descriptor,
-//          buffer,
-//          2,
-//          0,
-//          reinterpret_cast<sockaddr*>(&addr.addr),
-//          &addr.len
-//  );
-//  std::cerr << "ok:" << ok << '\n';
-//
-//  if (ok < 0 || ok > buffer_size) {
-//    return {"", addr};
-//  }
-//
-//  static const int modulo = 127;
-//  size_t length = buffer[0] + buffer[1] * modulo;
   size_t length = buffer_size;
   recvfrom(
           descriptor,
@@ -92,6 +65,10 @@ std::pair<std::string, Address> UdpSocket::read() const {
   );
 
   std::string s = buffer;
+  for (size_t i = 0; i < s.size(); ++i) {
+    buffer[i] = 0;
+  }
+
   return {s, addr};
 }
 

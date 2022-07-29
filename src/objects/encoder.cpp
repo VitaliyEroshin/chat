@@ -69,6 +69,53 @@ T StrEncoder::from_bytes(const Encoder::bytes& b) {
   return result;
 }
 
+#include <algorithm> // reverse
+std::string remove_zeroes(std::string s) {
+  std::string result;
+  std::reverse(s.begin(), s.end());
+  auto ptr = reinterpret_cast<const unsigned char*>(&s[0]);
+
+  int carry = 0;
+  for (int i = 0; i < s.size(); ++i) {
+    int x = ptr[i];
+    carry = carry * 256 + x;
+    while (carry >= 255) {
+      result.push_back(carry % 255 + 1);
+      carry /= 255;
+    }
+  }
+
+  if (carry != 0) {
+    result.push_back(carry + 1);
+  }
+
+  return result;
+}
+
+std::string add_zeroes(std::string s) {
+  std::string result;
+  std::reverse(s.begin(), s.end());
+  auto ptr = reinterpret_cast<const unsigned char*>(&s[0]);
+
+  int carry = 0;
+
+  for (int i = 0; i < s.size(); ++i) {
+    int x = ptr[i];
+    carry = carry * 255 + (x - 1);
+    while (carry >= 256) {
+      result.push_back(carry % 256);
+      carry /= 256;
+    }
+  }
+
+  if (carry != 0) {
+    result.push_back(carry);
+  }
+
+  return result;
+}
+
+
 Encoder::bytes StrEncoder::encode(const Object& object) {
   std::string s = "";
   s.push_back(get_type_id(object));
@@ -98,12 +145,15 @@ Encoder::bytes StrEncoder::encode(const Object& object) {
     s += to_bytes(object.code);
 
   s += object.content;
+  s.push_back(1);
+  s = remove_zeroes(s);
   return s;
 }
 
-Object StrEncoder::decode(const Encoder::bytes& bytes) {
+Object StrEncoder::decode(Encoder::bytes bytes) {
   Object object;
-  
+  bytes = add_zeroes(bytes);
+
   char type = bytes[0];
   object.type = from_type_id(type);
   object.attributes = bytes[1];
@@ -152,6 +202,7 @@ Object StrEncoder::decode(const Encoder::bytes& bytes) {
   for (int i = ptr; i < bytes.size(); ++i) {
     object.content += bytes[i];
   }
+  object.content.pop_back();
   
   return object;
 }

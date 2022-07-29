@@ -22,8 +22,8 @@ int Client::auth() {
   socket.send(encoder.encode(attempt));
 
   auto[query, addr] = socket.read();
-  attempt = encoder.decode(query);
 
+  attempt = encoder.decode(query);
   return print_auth_results(attempt.code);
 }
 

@@ -6,12 +6,13 @@ UdpServer::UdpServer(int port, Storage& storage, Encoder& encoder, Logger& log)
     , encoder(encoder)
     , log(log)
 {
-  log << "Descriptor is " <<  socket.get_descriptor() << std::endl;
   if (socket.bind() != 0) {
     log << "Binding failed." << std::endl;
   }
 
-  log << "Server is ready on " << socket.get_ip_address() ;
+  log << "Server is ready on " << socket.get_ip_address() << std::endl;
+  init_handlers();
+  log << "Command handlers ready" << std::endl;
 }
 
 [[noreturn]] void UdpServer::loop() {
@@ -19,6 +20,7 @@ UdpServer::UdpServer(int port, Storage& storage, Encoder& encoder, Logger& log)
     auto [query, address] = socket.read();
     if (query == "ping") {
       // new connection
+      log << "Received ping, pinging back..." << std::endl;
       socket.send("ping", address);
     } else if (query == "") {
       socket.send("sorry", address);
@@ -54,31 +56,18 @@ void UdpServer::parse_query(std::string query, Address address) {
   task(query, address);
 }
 std::pair<std::string, std::string> split_auth_data(const std::string& content);
-//std::pair<std::string, std::string> split_auth_data(const std::string& content) {
-//  std::string login, password;
-//  int ptr;
-//  for (ptr = 0; ptr < content.size() && content[ptr] != 1; ++ptr) {
-//    login.push_back(content[ptr]);
-//  }
-//
-//  for (ptr = ptr + 1; ptr < content.size(); ++ptr) {
-//    password.push_back(content[ptr]);
-//  }
-//
-//  return std::make_pair(login, password);
-//}
 
 void UdpServer::parse_auth_data(const Object &object, Address &address) {
   auto [login, password] = split_auth_data(object.content);
 
-  auto user = get_connection_reference(address);
+  auto& user = get_connection_reference(address);
 
   Object callback;
   callback.type = Object::Type::returnCode;
 
   const int
           kOk = 0,
-          kSignedUp = 1,
+          kSignedUp = 0,
           kWrongPassword = 2;
 
   int result = storage.get_user(login, password);
@@ -102,12 +91,13 @@ void UdpServer::parse_auth_data(const Object &object, Address &address) {
 }
 
 void UdpServer::parse_command(const Object& object, Address& address) {
-  auto user = get_connection_reference(address);
+  auto& user = get_connection_reference(address);
   std::stringstream ss;
   ss << object.content;
 
   std::string command_type;
   ss >> command_type;
+  log << "Accepted command " << command_type << std::endl;
 
   Object callback;
   callback.type = Object::Type::text;
@@ -118,13 +108,15 @@ void UdpServer::parse_command(const Object& object, Address& address) {
 
   if (handlers.count(command_type)) {
     handlers[command_type](callback, user, ss);
+  } else {
+    log << "Unknown command, sorry" << std::endl;
   }
 
   socket.send(encoder.encode(callback), user.address);
 }
 
 void UdpServer::add_message(Object& object, Address& address) {
-  auto user = get_connection_reference(address);
+  auto& user = get_connection_reference(address);
   std::stringstream ss;
   add_message_handler(object, user, ss);
 }

@@ -6,7 +6,7 @@ class Encoder {
 public:
   typedef std::string bytes;
   virtual bytes encode(const Object& object) = 0;
-  virtual Object decode(const bytes& bytes) = 0;
+  virtual Object decode(bytes bytes) = 0;
 };
 
 class StrEncoder: public Encoder {
@@ -22,5 +22,5 @@ private:
 
 public:
   bytes encode(const Object& object) override;
-  Object decode(const bytes& bytes) override;
+  Object decode(bytes bytes) override;
 };

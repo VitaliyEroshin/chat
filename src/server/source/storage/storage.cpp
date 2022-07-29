@@ -282,7 +282,8 @@ int SmartStorage::add_friend(userid_t self_id, userid_t target) {
 
 std::string SmartStorage::get_user_nickname(userid_t id) {
   Block& block = data["userdata"][get_user_data_block(id)];
-  std::stringstream ss(block[get_user_data_block_pos(id)]);
+  std::string s = block[get_user_data_block_pos(id)];
+  std::stringstream ss(s);
   std::string value;
   ss >> value;
   ss >> value;

@@ -394,6 +394,7 @@ void Client::parse_text_object(Object object) {
 void Client::quit() {
   run.store(false);
   socket.~Socket();
+
 }
 
 void Client::parse_input_command(const std::string& command) {

@@ -1,6 +1,6 @@
 #pragma once
 
-//#define UDP
+#define UDP
 
 #include <string>
 #include <iostream>
