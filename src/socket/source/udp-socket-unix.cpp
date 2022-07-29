@@ -28,50 +28,61 @@ int UdpSocket::bind() {
   );
 }
 
-std::string UdpSocket::get_ip_address() const {
-  return {inet_ntoa(address.addr.sin_addr)};
+std::string UdpSocket::get_ip_address(Address& addr) const {
+  return {inet_ntoa(addr.addr.sin_addr)};
 }
 
-char SocketBase::buffer[buffer_size];
+std::string UdpSocket::get_ip_address() {
+  return get_ip_address(address);
+}
+
 
 #include <cstring> // memcpy
-void UdpSocket::send(const std::string& message, Address& destination) const {
-  static const int modulo = 127;
-  buffer[0] = message.size() % modulo;
-  buffer[1] = message.size() / modulo;
+#include <iostream>
 
-  memcpy(buffer + 2, message.c_str(), message.size());
+void UdpSocket::send(const std::string& message, Address& destination) const {
+//  static const int modulo = 127;
+//  buffer[0] = message.size() % modulo;
+//  buffer[1] = message.size() / modulo;
+
+//  memcpy(buffer + 2, message.c_str(), message.size());
 
   destination.len = sizeof(destination.addr);
-
+  std::cerr << "Sending " << message << std::endl;
   sendto(
           descriptor,
-          buffer,
-          2 + message.size(),
+          message.c_str(), // buffer
+          message.size(), // 2 + msg.size()
           0,
           reinterpret_cast<sockaddr*>(&destination.addr),
           destination.len
   );
 }
 
+void UdpSocket::send(const std::string& message) {
+  send(message, address);
+}
+
 std::pair<std::string, Address> UdpSocket::read() const {
   Address addr;
-  int ok = recvfrom(
-          descriptor,
-          buffer,
-          2,
-          0,
-          reinterpret_cast<sockaddr*>(&addr.addr),
-          &addr.len
-  );
-
-  if (ok < 0 || ok > buffer_size) {
-    return {"", addr};
-  }
-
-  static const int modulo = 127;
-  size_t length = buffer[0] + buffer[1] * modulo;
-  int bytes = recvfrom(
+//  int ok = recvfrom(
+//          descriptor,
+//          buffer,
+//          2,
+//          0,
+//          reinterpret_cast<sockaddr*>(&addr.addr),
+//          &addr.len
+//  );
+//  std::cerr << "ok:" << ok << '\n';
+//
+//  if (ok < 0 || ok > buffer_size) {
+//    return {"", addr};
+//  }
+//
+//  static const int modulo = 127;
+//  size_t length = buffer[0] + buffer[1] * modulo;
+  size_t length = buffer_size;
+  recvfrom(
           descriptor,
           buffer,
           length,
@@ -80,14 +91,7 @@ std::pair<std::string, Address> UdpSocket::read() const {
           &addr.len
   );
 
-  if (bytes < 0 || bytes > buffer_size) {
-    return {"", addr};
-  }
-
-  std::string s;
-  for (size_t i = 0; i < bytes; ++i) {
-    s.push_back(buffer[i]);
-  }
+  std::string s = buffer;
   return {s, addr};
 }
 
@@ -102,6 +106,10 @@ void UdpSocket::get_peer_name(Address& addr) {
 
 int UdpSocket::get_port(Address& addr) const {
   return addr.addr.sin_port;
+}
+
+int UdpSocket::get_port() {
+  return get_port(address);
 }
 
 bool UdpSocket::setup_address(const std::string& ip_address) {

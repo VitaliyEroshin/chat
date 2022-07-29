@@ -1,4 +1,7 @@
 #pragma once
+
+//#define UDP
+
 #include <string>
 #include <iostream>
 #include <atomic>
@@ -7,7 +10,13 @@
 #include <list>
 #include <algorithm>
 
+#ifdef UDP
+#include "udp-socket.hpp"
+using Socket = UdpSocket;
+#else
 #include "socket.hpp"
+#endif
+
 #include "encoder.hpp"
 #include "ui.hpp"
 #include "filesystem.hpp"

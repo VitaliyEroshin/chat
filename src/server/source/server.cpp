@@ -102,7 +102,7 @@ void Server::parse_query(const std::string& query, Connection& user) {
   }
 }
 
-std::pair<std::string, std::string> splitAuthData(const std::string& content) {
+std::pair<std::string, std::string> split_auth_data(const std::string& content) {
   std::string login, password;
   int ptr;
   for (ptr = 0; ptr < content.size() && content[ptr] != 1; ++ptr) {
@@ -117,7 +117,7 @@ std::pair<std::string, std::string> splitAuthData(const std::string& content) {
 }
 
 void Server::parse_auth_data(const Object& object, Connection& user) {
-  auto [login, password] = splitAuthData(object.content);
+  auto [login, password] = split_auth_data(object.content);
 
   Object callback;
   callback.type = Object::Type::returnCode;
