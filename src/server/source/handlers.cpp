@@ -1,23 +1,23 @@
 #include "server.hpp"
 #include <chrono>
 
-void Server::initHandlers() {
-    addHandler("/addfriend", &Server::addFriendHandler);
-    addHandler("/myid", &Server::getSelfIdHandler);
-    addHandler("/chat", &Server::getChatIdHandler);
-    addHandler("/makechat", &Server::makeChatHandler);
-    addHandler("/invite", &Server::inviteToChatHandler);
-    addHandler("/switchchat", &Server::switchChatHandler);
-    addHandler("/friends", &Server::getFriendsHandler);
-    addHandler("/chats", &Server::getChatsHandler);
-    addHandler("/help", &Server::getHelpHandler);
-    addHandler("/about", &Server::getAboutHandler);
-    addHandler("/scrollup", &Server::scrollUpHandler);
-    addHandler("/scrolldown", &Server::scrollDownHandler);
+void Server::init_handlers() {
+  add_handler("/addfriend", &Server::addFriendHandler);
+  add_handler("/myid", &Server::getSelfIdHandler);
+  add_handler("/chat", &Server::getChatIdHandler);
+  add_handler("/makechat", &Server::makeChatHandler);
+  add_handler("/invite", &Server::inviteToChatHandler);
+  add_handler("/switchchat", &Server::switchChatHandler);
+  add_handler("/friends", &Server::getFriendsHandler);
+  add_handler("/chats", &Server::getChatsHandler);
+  add_handler("/help", &Server::getHelpHandler);
+  add_handler("/about", &Server::getAboutHandler);
+  add_handler("/scrollup", &Server::scrollUpHandler);
+  add_handler("/scrolldown", &Server::scrollDownHandler);
 }
 
 template<typename Handler>
-void Server::addHandler(const std::string& command, Handler handler) {
+void Server::add_handler(const std::string& command, Handler handler) {
     handlers[command] = std::bind(handler, this,  std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 }
 
@@ -25,7 +25,7 @@ void Server::addFriendHandler(Object& callback, Connection& user, std::stringstr
   userid_t target;
   ss >> target;
 
-  switch (storage.addFriend(user.user, target)) {
+  switch (storage.add_friend(user.user, target)) {
     case 0:
       callback.content = "Success";
       break;
@@ -48,24 +48,24 @@ void Server::getSelfIdHandler(Object& callback, Connection& user, std::stringstr
 }
 
 void Server::getChatIdHandler(Object& callback, Connection& user, std::stringstream& ss) {
-  callback.content = "You are in chat with ID: " + std::to_string(storage.getChat(user.user));
+  callback.content = "You are in chat with ID: " + std::to_string(storage.get_chat(user.user));
 }
 
 void Server::makeChatHandler(Object& callback, Connection& user, std::stringstream& ss) {
-  chatid_t id = storage.createChat(user.user);
-  storage.setUserChat(user.user, id);
+  chatid_t id = storage.create_chat(user.user);
+  storage.get_user_chat(user.user, id);
   callback.content = "You have successfully created chat with ID: " + std::to_string(id);
 }
 
 void Server::inviteToChatHandler(Object& callback, Connection& user, std::stringstream& ss) {
-  chatid_t currentChat = storage.getChat(user.user);
+  chatid_t currentChat = storage.get_chat(user.user);
   if (!currentChat) {
     callback.content = "You cannot invite users to the global chat";
   } else {
     userid_t target;
     ss >> target;
     
-    int code = storage.inviteToChat(user.user, target, currentChat);
+    int code = storage.invite_to_chat(user.user, target, currentChat);
     if (code == -4) {
       callback.content = "User id is invalid";
     } else if (code == -1) {
@@ -74,7 +74,7 @@ void Server::inviteToChatHandler(Object& callback, Connection& user, std::string
       callback.content = "You have not permission to invite people in that chat.";
     } else {
       callback.content = "You have invited " 
-        + storage.getUserNickname(target)
+        + storage.get_user_nickname(target)
         + " to chat " + std::to_string(currentChat);
     }
   }
@@ -83,19 +83,19 @@ void Server::inviteToChatHandler(Object& callback, Connection& user, std::string
 void Server::switchChatHandler(Object& callback, Connection& user, std::stringstream& ss) {
   chatid_t id;
   ss >> id;
-  int code = storage.setUserChat(user.user, id);
+  int code = storage.get_user_chat(user.user, id);
   if (code == -1) {
     callback.content = "No chat found.";
   } else if (code == -2) {
     callback.content = "You are not a member of the chat";
   } else {
     callback.content = "You have succesfully switched the chat";
-    callback.setReturnCode(6);
+    callback.set_return_code(6);
   }
 }
 
 void Server::getFriendsHandler(Object& callback, Connection& user, std::stringstream& ss) {
-  const std::vector<userid_t>& friends = storage.getUserFriends(user.user);
+  const std::vector<userid_t>& friends = storage.get_user_friends(user.user);
   if (friends.empty()) {
     callback.content = "You have no friends :(";
     return;
@@ -103,7 +103,7 @@ void Server::getFriendsHandler(Object& callback, Connection& user, std::stringst
 
   callback.content = "Your friends are: ";
   for (auto &usr : friends) {
-    callback.content += storage.getUserNickname(usr) + "(" + std::to_string(usr) + ")";
+    callback.content += storage.get_user_nickname(usr) + "(" + std::to_string(usr) + ")";
     if (usr != friends.back()) {
       callback.content += ",";
     } else {
@@ -113,7 +113,7 @@ void Server::getFriendsHandler(Object& callback, Connection& user, std::stringst
 }
 
 void Server::getChatsHandler(Object& callback, Connection& user, std::stringstream& ss) {
-  const std::vector<chatid_t>& userchats = storage.getUserChats(user.user);
+  const std::vector<chatid_t>& userchats = storage.get_user_chats(user.user);
   if (userchats.empty()) {
     callback.content = "You have no available chats :(";
     return;
@@ -129,19 +129,19 @@ void Server::getChatsHandler(Object& callback, Connection& user, std::stringstre
 }
 
 void Server::getHelpHandler(Object& callback, Connection& user, std::stringstream& ss) {
-  callback.content = fs::loadContent("./content/help/header.txt");
+  callback.content = fs::load_content("./content/help/header.txt");
   user.socket->send(encoder.encode(callback));
-  callback.content = fs::loadContent("./content/help/friends.txt");
+  callback.content = fs::load_content("./content/help/friends.txt");
   user.socket->send(encoder.encode(callback));
-  callback.content = fs::loadContent("./content/help/chats.txt");
+  callback.content = fs::load_content("./content/help/chats.txt");
   user.socket->send(encoder.encode(callback));
-  callback.content = fs::loadContent("./content/help/other.txt");
+  callback.content = fs::load_content("./content/help/other.txt");
   user.socket->send(encoder.encode(callback));
-  callback.content = fs::loadContent("./content/help/footer.txt");
+  callback.content = fs::load_content("./content/help/footer.txt");
 }
 
 void Server::getAboutHandler(Object& callback, Connection& user, std::stringstream& ss) {
-  callback.content = fs::loadContent("./content/about.txt");
+  callback.content = fs::load_content("./content/about.txt");
 }
 
 uint64_t getTimestamp() {
@@ -150,26 +150,26 @@ uint64_t getTimestamp() {
   return timestamp;
 }
 
-void Server::addMessageHandler(Object& object, Connection& user, std::stringstream& ss) {
-  chatid_t chat = storage.getChat(user.user);
+void Server::add_message_handler(Object& object, Connection& user, std::stringstream& ss) {
+  chatid_t chat = storage.get_chat(user.user);
   
   // TODO
   // auto timestamp = getTimestamp();
-  // object.setTimestamp(timestamp);
+  // object.set_timestamp(timestamp);
 
-  object.content = "[" + storage.getUserNickname(user.user) + "] " + object.content;
+  object.content = "[" + storage.get_user_nickname(user.user) + "] " + object.content;
   
   if (chat != 0) {
     log << "Attaching object " << object.info();
-    int id = storage.addMessage(object, encoder, chat);
+    int id = storage.add_message(object, encoder, chat);
     log << "OK" << std::endl;
-    object = storage.getMessage(id, encoder);
+    object = storage.get_message(id, encoder);
   } else {
-    object.setReturnCode(4);
+    object.set_return_code(4);
   }
 
   for (auto &other : connections) {
-    if (storage.getChat(other.user) != storage.getChat(user.user)) {
+    if (storage.get_chat(other.user) != storage.get_chat(user.user)) {
       continue;
     }
 
@@ -178,22 +178,22 @@ void Server::addMessageHandler(Object& object, Connection& user, std::stringstre
 }
 
 void Server::scrollUpHandler(Object& object, Connection& user, std::stringstream& ss) {
-  chatid_t chat = storage.getChat(user.user);
+  chatid_t chat = storage.get_chat(user.user);
   if (chat == 0) {
     return;
   }
-  auto lastMessage = storage.getLastMessage(encoder, chat);
+  auto lastMessage = storage.get_last_message(encoder, chat);
   if (lastMessage.code == -1) {
     object.content = "This is the beginning of chat.";
-    object.setReturnCode(4);
+    object.set_return_code(4);
     return;
   }
 
-  if (!lastMessage.hasId()) {
+  if (!lastMessage.has_id()) {
     return;
   }
 
-  if (!storage.isMember(chat, user.user)) {
+  if (!storage.is_member(chat, user.user)) {
     return;
   }
 
@@ -201,14 +201,14 @@ void Server::scrollUpHandler(Object& object, Connection& user, std::stringstream
 
   log << "In chat " << chat << std::endl; 
 
-  Object obj = storage.getMessage(object.id == 0 ? lastMessage.id : object.id, encoder);
+  Object obj = storage.get_message(object.id == 0 ? lastMessage.id : object.id, encoder);
   
   log << "Last message " << obj.info() << std::endl;
 
   const size_t
     kHistoricMessage = 5;
 
-  obj.setReturnCode(kHistoricMessage);
+  obj.set_return_code(kHistoricMessage);
   obj.type = Object::Type::text;
 
   if (object.id == 0)
@@ -216,9 +216,9 @@ void Server::scrollUpHandler(Object& object, Connection& user, std::stringstream
 
   const size_t callbackSize = 2;
   for (size_t i = 0; i < callbackSize; ++i) {
-    obj = storage.getMessage(obj.prev, encoder);
-    obj.setReturnCode(kHistoricMessage);
-    if (!obj.hasPrev() || obj.prev == 0) {
+    obj = storage.get_message(obj.prev, encoder);
+    obj.set_return_code(kHistoricMessage);
+    if (!obj.has_prev() || obj.prev == 0) {
       break;
     }
     log << "Sending... " << obj.info();
@@ -230,21 +230,21 @@ void Server::scrollUpHandler(Object& object, Connection& user, std::stringstream
 }
 
 void Server::scrollDownHandler(Object& object, Connection& user, std::stringstream& ss) {
-  if (!object.hasId()) {
+  if (!object.has_id()) {
     return;
   }
-  chatid_t chat = storage.getMessageChatid(object.id);
-  if (!storage.isMember(chat, user.user)) {
+  chatid_t chat = storage.get_message_chat_id(object.id);
+  if (!storage.is_member(chat, user.user)) {
     return;
   }
   
-  Object obj = storage.getMessage(object.id, encoder);
+  Object obj = storage.get_message(object.id, encoder);
   user.socket->send(encoder.encode(obj));
   for (size_t i = 0; i < 3; ++i) {
-    if (!obj.hasNext() || obj.next == 0) {
+    if (!obj.has_next() || obj.next == 0) {
       break;
     }
-    obj = storage.getMessage(obj.next, encoder);
+    obj = storage.get_message(obj.next, encoder);
     user.socket->send(encoder.encode(obj));
   }
   object = Object();

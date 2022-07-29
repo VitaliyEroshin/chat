@@ -28,10 +28,10 @@ Server::Server(int port, Storage& storage, Encoder& encoder, Logger& log)
     log << "Listen failed." << std::endl;
 
   log << "Server constructed\n";
-  initHandlers();
+  init_handlers();
 }
 
-void Server::acceptConnection() {
+void Server::accept_connection() {
   auto* new_socket = new Socket(socket.accept());
   log << "Accepted new connection, FD(" << new_socket->get_descriptor() << ") ";
   log << "ip: " << new_socket->get_ip_address();
@@ -39,7 +39,7 @@ void Server::acceptConnection() {
   connections.emplace_back(new_socket);
 }
 
-void Server::removeConnection(const Connection& peer) {
+void Server::remove_connection(const Connection& peer) {
   peer.socket->get_peer_name();
   log << "Peer disconnected, FD(" << peer.socket->get_descriptor() << ") ";
   log << "ip: " << peer.socket->get_ip_address();
@@ -47,26 +47,26 @@ void Server::removeConnection(const Connection& peer) {
   peer.socket->~Socket();
 }
 
-void Server::selectDescriptor() {
+void Server::select_descriptor() {
   readset.clear();
   readset.set(socket.get_descriptor());
     
-  int maxDescriptor = socket.get_descriptor();
+  int max_descriptor = socket.get_descriptor();
 
   for (auto &x : connections) {
       readset.set(x.socket->get_descriptor());
-      maxDescriptor = std::max(maxDescriptor, x.socket->get_descriptor());
+    max_descriptor = std::max(max_descriptor, x.socket->get_descriptor());
   }
 
-  readset.select(maxDescriptor + 1);
+  readset.select(max_descriptor + 1);
 }
 
 [[noreturn]] void Server::loop() {
   while (true) {
-    selectDescriptor();
+    select_descriptor();
 
     if (readset.count(socket.get_descriptor())) {
-      acceptConnection();
+      accept_connection();
     }
 
     for (auto it = connections.begin(); it != connections.end();) {
@@ -76,28 +76,28 @@ void Server::selectDescriptor() {
       if (readset.count(peer.socket->get_descriptor())) {
         std::string query = peer.socket->read();
         if (query.empty()) {
-          removeConnection(peer);
+          remove_connection(peer);
           connections.erase(current);
         } else {
-          parseQuery(query, peer);
+          parse_query(query, peer);
         }
       }
     }
   }
 }
 
-void Server::parseQuery(const std::string& query, Connection& user) {
+void Server::parse_query(const std::string& query, Connection& user) {
   Object object = encoder.decode(query);
   if (object.type == Object::Type::text) {
-    addMessage(object, user);
+    add_message(object, user);
     return;
   }
   if (object.type == Object::Type::loginAttempt) {
-    parseAuthData(object, user);
+    parse_auth_data(object, user);
     return;
   }
   if (object.type == Object::Type::command) {
-    parseCommand(object, user);
+    parse_command(object, user);
     return;
   }
 }
@@ -116,7 +116,7 @@ std::pair<std::string, std::string> splitAuthData(const std::string& content) {
   return std::make_pair(login, password);
 }
 
-void Server::parseAuthData(const Object& object, Connection& user) {
+void Server::parse_auth_data(const Object& object, Connection& user) {
   auto [login, password] = splitAuthData(object.content);
 
   Object callback;
@@ -127,20 +127,20 @@ void Server::parseAuthData(const Object& object, Connection& user) {
     kSignedUp = 1,
     kWrongPassword = 2;
 
-  int result = storage.getUser(login, password);
+  int result = storage.get_user(login, password);
   switch (result) {
     case -2:
-      callback.setReturnCode(kWrongPassword);
+      callback.set_return_code(kWrongPassword);
       break;
 
     case -1:
-      callback.setReturnCode(kSignedUp);
-      user.user = storage.addUser(login, password);
+      callback.set_return_code(kSignedUp);
+      user.user = storage.add_user(login, password);
       user.status = Server::Connection::Status::inmenu;
       break;
 
     default:
-      callback.setReturnCode(kOk);
+      callback.set_return_code(kOk);
       user.user = result;
       user.status = Server::Connection::Status::inmenu;
   }
@@ -148,28 +148,28 @@ void Server::parseAuthData(const Object& object, Connection& user) {
   user.socket->send(encoder.encode(callback));
 }
 
-void Server::parseCommand(const Object& object, Connection& user) {
+void Server::parse_command(const Object& object, Connection& user) {
   std::stringstream ss;
   ss << object.content;
 
-  std::string commandType;
-  ss >> commandType;
+  std::string command_type;
+  ss >> command_type;
 
   Object callback;
   callback.type = Object::Type::text;
-  callback.setId((object.hasId() ? object.id : 0));
+  callback.set_id((object.has_id() ? object.id : 0));
 
   const int kCommandCallback = 4;
-  callback.setReturnCode(kCommandCallback);
+  callback.set_return_code(kCommandCallback);
 
-  if (handlers.count(commandType)) {
-    handlers[commandType](callback, user, ss);
+  if (handlers.count(command_type)) {
+    handlers[command_type](callback, user, ss);
   }
 
   user.socket->send(encoder.encode(callback));
 }
 
-void Server::addMessage(Object object, Connection& user) {
+void Server::add_message(Object object, Connection& user) {
   std::stringstream ss;
-  addMessageHandler(object, user, ss);
+  add_message_handler(object, user, ss);
 }

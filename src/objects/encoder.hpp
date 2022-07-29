@@ -11,14 +11,14 @@ public:
 
 class StrEncoder: public Encoder {
 private:
-  static char getTypeId(const Object& object);
-  static Object::Type fromTypeId(char id);
+  static char get_type_id(const Object& object);
+  static Object::Type from_type_id(char id);
 
   template<typename T>
-  bytes toBytes(T id);
+  bytes to_bytes(T id);
 
   template<typename T>
-  T fromBytes(const bytes& b);
+  T from_bytes(const bytes& b);
 
 public:
   bytes encode(const Object& object) override;

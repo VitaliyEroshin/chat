@@ -2,7 +2,7 @@
 #include <filesystem>
 
 void Block::save(const std::string& path) {
-  savePath = path;
+  save_path = path;
   std::ofstream stream(path);
   stream << block_size << "\n";
   for (auto &row : data) {
@@ -11,7 +11,7 @@ void Block::save(const std::string& path) {
 }
 
 void Block::save() {
-  save(savePath);
+  save(save_path);
 }
 
 size_t Block::size() {
@@ -33,7 +33,7 @@ void Block::add(const std::string& s) {
 
 Block::Block(const std::string& path, const std::string& block)
     : block(block),
-      savePath(path)
+      save_path(path)
 {
   if (!std::filesystem::exists(path)) {
     block_size = 0;
@@ -69,7 +69,7 @@ Block& LRUCache::operator[](const std::string& i) {
     cache.erase(it);
     iterators[i] = cache.begin();
   } else {
-    if (cache.size() == maxCacheSize) {
+    if (cache.size() == max_cache_size) {
       iterators.erase(cache.back().block);
       cache.pop_back();
     }
@@ -84,17 +84,17 @@ Block& LRUCache::operator[](size_t i) {
 }
 
 LRUCache::LRUCache(size_t size, const std::string& path)
-    : maxCacheSize(size), 
+    : max_cache_size(size),
       path(path)
 {
   std::filesystem::create_directories(path);
 }
 
-LRUCache::LRUCache(LRUCache&& other)
-    : maxCacheSize(other.maxCacheSize),
+LRUCache::LRUCache(LRUCache&& other) noexcept
+    : max_cache_size(other.max_cache_size),
       path(std::move(other.path)),
       cache(std::move(other.cache)),
       iterators(std::move(other.iterators))
 {
-  other.maxCacheSize = 0;
+  other.max_cache_size = 0;
 }

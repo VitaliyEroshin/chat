@@ -49,18 +49,18 @@ private:
   std::map<std::string, std::function<void(Object&, Connection&, std::stringstream&)>> handlers;
 
   DescriptorSet readset{};
-  void acceptConnection();
-  void selectDescriptor();
-  void removeConnection(const Connection& peer);
-  void parseQuery(const std::string& query, Connection& user);
-  void parseAuthData(const Object& object, Connection& user);
-  void parseCommand(const Object& object, Connection& user);
-  void addMessage(Object object, Connection& user);
+  void accept_connection();
+  void select_descriptor();
+  void remove_connection(const Connection& peer);
+  void parse_query(const std::string& query, Connection& user);
+  void parse_auth_data(const Object& object, Connection& user);
+  void parse_command(const Object& object, Connection& user);
+  void add_message(Object object, Connection& user);
 
-  void initHandlers();
+  void init_handlers();
   
   template<typename Handler>
-  void addHandler(const std::string& command, Handler handler);
+  void add_handler(const std::string& command, Handler handler);
 
 
   void addFriendHandler(Object& callback, Connection& user, std::stringstream& ss);
@@ -74,7 +74,7 @@ private:
   void getHelpHandler(Object& callback, Connection& user, std::stringstream& ss);
   void getAboutHandler(Object& callback, Connection& user, std::stringstream& ss);
 
-  void addMessageHandler(Object& object, Connection& user, std::stringstream& ss);
+  void add_message_handler(Object& object, Connection& user, std::stringstream& ss);
   void scrollUpHandler(Object& object, Connection& user, std::stringstream& ss);
   void scrollDownHandler(Object& object, Connection& user, std::stringstream& ss);
 };

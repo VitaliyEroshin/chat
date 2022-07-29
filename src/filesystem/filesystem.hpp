@@ -11,9 +11,9 @@
 
 
 namespace fs {
-  std::string loadContent(const std::string& path);
+  std::string load_content(const std::string& path);
     
-  int getFileCount(const std::string& path);
+  int get_file_count(const std::string& path);
 
   class Config {
   public:

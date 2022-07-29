@@ -24,25 +24,25 @@ struct Object {
   std::string content;
   Type type;
 
-  void setId(int id_);
-  void setAuthor(int author_);
-  void setTimestamp(int64_t timestamp_);
-  void setThread(int thread_);
-  void setReply(int reply_);
-  void setPrev(int prev_);
-  void setNext(int next_);
-  void setReturnCode(int code_);
+  void set_id(int id_);
+  void set_author(int author_);
+  void set_timestamp(int64_t timestamp_);
+  void set_thread(int thread_);
+  void set_reply(int reply_);
+  void set_prev(int prev_);
+  void set_next(int next_);
+  void set_return_code(int code_);
 
-  bool hasId() const;
-  bool hasAuthor() const;
-  bool hasTimestamp() const;
-  bool hasThread() const;
-  bool hasReply() const;
-  bool hasPrev() const;
-  bool hasNext() const;
-  bool hasReturnCode() const;
+  bool has_id() const;
+  bool has_author() const;
+  bool has_timestamp() const;
+  bool has_thread() const;
+  bool has_reply() const;
+  bool has_prev() const;
+  bool has_next() const;
+  bool has_return_code() const;
   
-  bool hasReturnCode(int code_) const;
+  bool has_return_code(int code_) const;
 
   std::string info() const;
 };
