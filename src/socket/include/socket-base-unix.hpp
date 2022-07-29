@@ -5,6 +5,7 @@
 
 struct Address {
     sockaddr_in addr;
+    socklen_t len;
 };
 
 class SocketBase {
