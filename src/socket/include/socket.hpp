@@ -1,67 +1,34 @@
 #pragma once
+#include "socket-base-unix.hpp" // include if unix
 #include <string>
-#include <utility>
-#include <iostream>
 
-namespace cstd {
-  #include <sys/socket.h>
-  #include <netinet/in.h>
-  #include <unistd.h>
-  #include <fcntl.h>
-  #include <arpa/inet.h>
-}
-
-#ifdef unix
-  #define in_addr_t cstd::in_addr_t
-  #define htonl cstd::htonl
-  #define htons cstd::htons
-#endif
-
-#ifdef __APPLE__
-  #define select cstd::select
-#endif
-
-#undef SOCK_STREAM
-const int SOCK_STREAM = 1;
-
-class Socket {
-private:
-  static const size_t bufferSize = 1024;
-  static char buffer[bufferSize];
-
+class Socket: public SocketBase {
 public:
-  typedef cstd::sockaddr_in Address;
-
-  const int domain = AF_INET;
-
-  int descriptor = 0;
-  Address address{};
-
-  explicit Socket(int port);
   Socket() = default;
+  explicit Socket(int port);
   ~Socket();
 
+  void set_port(int port);
   int bind();
-  int setSocketOption(int option, int value);
+  int set_socket_option(int option, char value);
   int listen(int backlog);
-  void setAddress(int port);
+  
   Socket accept();
-  std::string getIpAddress() const;
+  std::string get_ip_address() const;
   void send(const std::string& message) const;
-  void send(char* buffer) const;
-  void send(char* buffer, size_t length) const;
   std::string read() const;
-  void getPeerName();
-  int getPort() const;
+  void get_peer_name();
+  int get_port() const;
 
-private:
-  std::pair<cstd::sockaddr*, unsigned int*> getAddress();
+  bool setup_address(const std::string& ip_address);
+  int get_descriptor() const;
+  int connect();
 };
 
-struct DescriptorSet {
-  fd_set descriptors;
+class DescriptorSet: public DescriptorSetBase {
+public:
   void set(int descriptor);
   void clear();
   bool count(int descriptor);
-  fd_set* reference();
+  void select(int max_descriptor);
 };

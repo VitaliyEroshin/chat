@@ -10,11 +10,11 @@ Client::Client(Encoder& encoder, fs::Config& config, Logger& logger)
 {}
 
 bool Client::setAddress(std::string ip, int port) {
-  socket.setAddress(port);
+  socket.set_port(port);
   if (ip == "localhost")
     ip = "127.0.0.1";
   
-  return cstd::inet_pton(AF_INET, ip.c_str(), &(socket.address.sin_addr));
+  return socket.setup_address(ip);
 }
 
 std::pair<std::string, std::string> Client::askAddress() {
@@ -103,11 +103,7 @@ void Client::setupAddress() {
 }
 
 int Client::connectToHost() {
-  return cstd::connect(
-    socket.descriptor, 
-    (cstd::sockaddr*)&(socket.address), 
-    sizeof(socket.address)
-  );
+  socket.connect();
 }
 
 std::pair<std::string, std::string> Client::askAuthData() {
@@ -296,10 +292,12 @@ int Client::session() {
   return 0;
 }
 
+#include <unistd.h> // usleep
+
 void Client::delay(const std::string& label) {
   const size_t usecInMsec = 1000;
 
-  cstd::usleep(config.get<int>(label) * usecInMsec);
+  usleep(config.get<int>(label) * usecInMsec);
 }
 
 void Client::showBackground(std::atomic<bool>& connecting) {

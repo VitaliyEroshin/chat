@@ -1,11 +1,11 @@
 #include "server.hpp"
 
 bool operator<(const Server::Connection& first, const Server::Connection& second) {
-  return first.socket->descriptor < second.socket->descriptor;
+  return first.socket->get_descriptor() < second.socket->get_descriptor();
 }
 
 bool operator==(const Server::Connection& first, const Server::Connection& second) {
-  return first.socket->descriptor == second.socket->descriptor;
+  return first.socket->get_descriptor() == second.socket->get_descriptor();
 }
 
 Server::Connection::Connection(Socket* socket)
@@ -18,7 +18,7 @@ Server::Server(int port, Storage& storage, Encoder& encoder, Logger& log)
       encoder(encoder),
       log(log)
 {
-  if (socket.setSocketOption(SO_REUSEADDR, 1) != 0)
+  if (socket.set_socket_option(SO_REUSEADDR, 1) != 0)
     log << "Socket option setting failed." << std::endl;
 
   if (socket.bind() != 0)
@@ -33,39 +33,39 @@ Server::Server(int port, Storage& storage, Encoder& encoder, Logger& log)
 
 void Server::acceptConnection() {
   auto* new_socket = new Socket(socket.accept());
-  log << "Accepted new connection, FD(" << new_socket->descriptor << ") ";
-  log << "ip: " << new_socket->getIpAddress();
-  log << ":" << new_socket->getPort() << "\n";
+  log << "Accepted new connection, FD(" << new_socket->get_descriptor() << ") ";
+  log << "ip: " << new_socket->get_ip_address();
+  log << ":" << new_socket->get_port() << "\n";
   connections.emplace_back(new_socket);
 }
 
 void Server::removeConnection(const Connection& peer) {
-  peer.socket->getPeerName();
-  log << "Peer disconnected, FD(" << peer.socket->descriptor << ") ";
-  log << "ip: " << peer.socket->getIpAddress();
-  log << ":" << peer.socket->getPort() << "\n";
+  peer.socket->get_peer_name();
+  log << "Peer disconnected, FD(" << peer.socket->get_descriptor() << ") ";
+  log << "ip: " << peer.socket->get_ip_address();
+  log << ":" << peer.socket->get_port() << "\n";
   peer.socket->~Socket();
 }
 
 void Server::selectDescriptor() {
   readset.clear();
-  readset.set(socket.descriptor);
+  readset.set(socket.get_descriptor());
     
-  int maxDescriptor = socket.descriptor;
+  int maxDescriptor = socket.get_descriptor();
 
   for (auto &x : connections) {
-      readset.set(x.socket->descriptor);
-      maxDescriptor = std::max(maxDescriptor, x.socket->descriptor);
+      readset.set(x.socket->get_descriptor());
+      maxDescriptor = std::max(maxDescriptor, x.socket->get_descriptor());
   }
 
-  select(maxDescriptor + 1, readset.reference(), nullptr, nullptr, nullptr);
+  readset.select(maxDescriptor + 1);
 }
 
 [[noreturn]] void Server::loop() {
   while (true) {
     selectDescriptor();
 
-    if (readset.count(socket.descriptor)) {
+    if (readset.count(socket.get_descriptor())) {
       acceptConnection();
     }
 
@@ -73,7 +73,7 @@ void Server::selectDescriptor() {
       auto current = it++;
       Connection& peer = *current;
 
-      if (readset.count(peer.socket->descriptor)) {
+      if (readset.count(peer.socket->get_descriptor())) {
         std::string query = peer.socket->read();
         if (query.empty()) {
           removeConnection(peer);
