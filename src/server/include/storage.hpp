@@ -29,8 +29,8 @@ public:
 
   virtual void set_message(Object object, Encoder& encoder, chatid_t chatid) = 0;
   virtual int add_message(Object object, Encoder& encoder, chatid_t chatid) = 0;
-  virtual Object get_message(int id, Encoder& encoder) = 0;
-  virtual Object get_last_message(Encoder& encoder, chatid_t chatid) = 0;
+  virtual Object get_message(int id) = 0;
+  virtual Object get_last_message(chatid_t chatid) = 0;
   virtual chatid_t get_message_chat_id(int id) = 0;
   virtual bool is_member(chatid_t chat, userid_t member) = 0;
 };
@@ -93,8 +93,8 @@ public:
 
   void set_message(Object object, Encoder& encoder, chatid_t chatid) override;
   int add_message(Object object, Encoder& encoder, chatid_t chatid) override;
-  Object get_message(int id, Encoder& encoder) override;
-  Object get_last_message(Encoder& encoder, chatid_t chatid) override;
+  Object get_message(int id) override;
+  Object get_last_message(chatid_t chatid) override;
   chatid_t get_message_chat_id(int id) override;
   bool is_member(chatid_t chat, userid_t member) override;
 

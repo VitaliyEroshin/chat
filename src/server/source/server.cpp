@@ -163,13 +163,62 @@ void Server::parse_command(const Object& object, Connection& user) {
   callback.set_return_code(kCommandCallback);
 
   if (handlers.count(command_type)) {
-    handlers[command_type](callback, user, ss);
-  }
+    auto sendfn = [this, user](const Object& callback){
+      user.socket->send(encoder.encode(callback));
+    };
 
-  user.socket->send(encoder.encode(callback));
+    auto task = handlers[command_type];
+    task(ss, static_cast<ConnectionBase &>(user), object, sendfn, storage);
+  }
 }
 
 void Server::add_message(Object object, Connection& user) {
   std::stringstream ss;
   add_message_handler(object, user, ss);
+}
+
+void Server::add_message_handler(Object& object, Connection& user, std::stringstream& ss) {
+  chatid_t chat = storage.get_chat(user.user);
+
+  // TODO
+  // auto timestamp = get_timestamp();
+  // object.set_timestamp(timestamp);
+
+  object.content = "[" + storage.get_user_nickname(user.user) + "] " + object.content;
+
+  if (chat != 0) {
+    log << "Attaching object " << object.info();
+    int id = storage.add_message(object, encoder, chat);
+    log << "OK" << std::endl;
+    object = storage.get_message(id);
+  } else {
+    object.set_return_code(4);
+  }
+
+  for (auto &other : connections) {
+    if (storage.get_chat(other.user) != storage.get_chat(user.user)) {
+      continue;
+    }
+
+    other.socket->send(encoder.encode(object));
+  }
+}
+
+void Server::init_handlers() {
+  add_handler("/addfriend", add_friend_handler);
+  add_handler("/myid", get_self_id_handler);
+  add_handler("/chat", get_chat_id_handler);
+  add_handler("/makechat", make_chat_handler);
+  add_handler("/invite", invite_to_chat_handler);
+  add_handler("/switchchat", switch_chat_handler);
+  add_handler("/friends", get_friends_handler);
+  add_handler("/chats", get_chats_handler);
+  add_handler("/help", get_help_handler);
+  add_handler("/about", get_about_handler);
+  add_handler("/scrollup", scroll_up_handler);
+  add_handler("/scrolldown", scroll_down_handler);
+}
+
+void Server::add_handler(const std::string& command, handler_t handler) {
+  handlers.insert({command, handler});
 }
