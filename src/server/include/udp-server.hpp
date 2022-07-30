@@ -12,23 +12,12 @@
 #include "storage.hpp"
 #include "filesystem.hpp"
 #include "logger.hpp"
+#include "server.hpp"
 
 class UdpServer {
-  struct Connection {
-    Connection();
-
-    enum Status {
-      unauthorized,
-      inmenu,
-      inchat,
-      inprofile
-    };
-
+  struct Connection: public ConnectionBase {
+    Connection() = default;
     Address address;
-    userid_t user{};
-    chatid_t chat{};
-    Status status;
-
     explicit Connection(Address address);
   };
 
@@ -56,7 +45,6 @@ public:
 
   template<typename Handler>
   void add_handler(const std::string& command, Handler handler);
-
 
   void addFriendHandler(Object& callback, Connection& user, std::stringstream& ss);
   void getSelfIdHandler(Object& callback, Connection& user, std::stringstream& ss);

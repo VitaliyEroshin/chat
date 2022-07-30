@@ -33,10 +33,6 @@ UdpServer::UdpServer(int port, Storage& storage, Encoder& encoder, Logger& log)
 UdpServer::Connection::Connection(Address address): address(address)
 {}
 
-UdpServer::Connection::Connection() {
-
-}
-
 void UdpServer::parse_query(std::string query, Address address) {
   auto task = [this](const std::string& query, Address& address) {
     Object object = encoder.decode(query);

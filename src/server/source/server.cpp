@@ -9,7 +9,7 @@ bool operator==(const Server::Connection& first, const Server::Connection& secon
 }
 
 Server::Connection::Connection(Socket* socket)
-  : socket(socket), status(unauthorized) {};
+  : socket(socket) {};
 
 
 Server::Server(int port, Storage& storage, Encoder& encoder, Logger& log)

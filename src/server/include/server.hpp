@@ -12,20 +12,23 @@
 #include "filesystem.hpp"
 #include "logger.hpp"
 
+struct ConnectionBase {
+public:
+  enum Status {
+    unauthorized,
+    inmenu,
+    inchat,
+    inprofile
+  };
+
+  userid_t user{};
+  chatid_t chat{};
+  Status status = unauthorized;
+};
+
 class Server {
-  struct Connection {
-    enum Status {
-      unauthorized,
-      inmenu,
-      inchat,
-      inprofile
-    };
-
+  struct Connection: public ConnectionBase {
     Socket* socket;
-    userid_t user{};
-    chatid_t chat{};
-    Status status;
-
     explicit Connection(Socket* socket);
   };
 
