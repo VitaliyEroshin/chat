@@ -29,12 +29,12 @@ int Socket::bind() {
   );
 }
 
-int Socket::set_socket_option(int option, char value) {
+int Socket::set_socket_option(int option, int value) {
   return setsockopt(
     descriptor, 
     SOL_SOCKET, 
     option, 
-    &value, 
+    reinterpret_cast<char*>(&value),
     sizeof(value)
   );
 }

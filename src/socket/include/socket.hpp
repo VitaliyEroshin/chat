@@ -10,7 +10,7 @@ public:
 
   void set_port(int port);
   int bind();
-  int set_socket_option(int option, char value);
+  int set_socket_option(int option, int value);
   int listen(int backlog);
   
   Socket accept();

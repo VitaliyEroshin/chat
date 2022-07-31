@@ -20,7 +20,3 @@ public:
   chatid_t chat{};
   Status status = unauthorized;
 };
-
-using handler_t = std::function<
-void(std::stringstream&, ConnectionBase&, const Object&,
-const std::function<void(const Object&)>&, Storage&)>;

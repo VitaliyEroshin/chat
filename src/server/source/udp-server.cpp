@@ -130,18 +130,18 @@ UdpServer::Connection& UdpServer::get_connection_reference(Address& address) {
 }
 
 void UdpServer::init_handlers() {
-  add_handler("/addfriend", add_friend_handler);
-  add_handler("/myid", get_self_id_handler);
-  add_handler("/chat", get_chat_id_handler);
-  add_handler("/makechat", make_chat_handler);
-  add_handler("/invite", invite_to_chat_handler);
-  add_handler("/switchchat", switch_chat_handler);
-  add_handler("/friends", get_friends_handler);
-  add_handler("/chats", get_chats_handler);
-  add_handler("/help", get_help_handler);
-  add_handler("/about", get_about_handler);
-  add_handler("/scrollup", scroll_up_handler);
-  add_handler("/scrolldown", scroll_down_handler);
+  add_handler("/addfriend", Handlers::add_friend_handler);
+  add_handler("/myid", Handlers::get_self_id_handler);
+  add_handler("/chat", Handlers::get_chat_id_handler);
+  add_handler("/makechat", Handlers::make_chat_handler);
+  add_handler("/invite", Handlers::invite_to_chat_handler);
+  add_handler("/switchchat", Handlers::switch_chat_handler);
+  add_handler("/friends", Handlers::get_friends_handler);
+  add_handler("/chats", Handlers::get_chats_handler);
+  add_handler("/help", Handlers::get_help_handler);
+  add_handler("/about", Handlers::get_about_handler);
+  add_handler("/scrollup", Handlers::scroll_up_handler);
+  add_handler("/scrolldown", Handlers::scroll_down_handler);
 }
 void UdpServer::add_handler(const std::string& command, handler_t handler) {
   handlers.insert({command, handler});

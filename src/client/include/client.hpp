@@ -1,7 +1,5 @@
 #pragma once
 
-#define UDP
-
 #include <string>
 #include <iostream>
 #include <atomic>
