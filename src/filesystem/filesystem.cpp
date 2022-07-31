@@ -10,7 +10,9 @@ std::string fs::load_content(const std::string& path) {
   return ss.str();
 }
 
-void fs::Config::load(const std::string& path) {
+void fs::Config::load(const std::string& path, const std::map<std::string, std::any>& default_values) {
+  default_parameters = default_values;
+
   std::ifstream in;
   in.open(path);
   while (in){

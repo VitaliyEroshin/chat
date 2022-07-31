@@ -1,4 +1,5 @@
 #include "storage.hpp"
+#include "constants.hpp"
 #include <string.h>
 #include <sstream>
 #include <filesystem>
@@ -13,9 +14,10 @@ void SmartStorage::add_module(const std::string& alias, size_t lru_size) {
 
 SmartStorage::SmartStorage(const std::string& cfg_path, Logger& logger, Encoder& encoder)
     : log(logger)
-    , config(logger, cfg_path)
+    , config(logger)
     , encoder(encoder)
 {
+  config.load(cfg_path, ServerConfig::get_default_values());
   const size_t lruSize = 2;
 
   std::vector<std::string> modules = {
