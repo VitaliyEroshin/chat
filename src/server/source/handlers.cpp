@@ -280,5 +280,4 @@ handler_t Handlers::quit_handler =
   Object callback = make_callback_obj();
   callback.content = "Okay, see you later";
   send(callback);
-  std::cout << "Quit request received, sent callback";
 };

@@ -50,8 +50,9 @@ private:
   UserInterface ui;
   Encoder& encoder;
   ObjectTree data;
-  fs::Config& config;
   Logger& log;
+  fs::Config& config;
+  fs::Config rc_info;
   
   std::pair<std::string, std::string> ask_address();
 

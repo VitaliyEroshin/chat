@@ -21,7 +21,7 @@ namespace fs {
     Config(Logger& log, const std::string& path);
     void load(const std::string& path, const std::map<std::string, std::any>& default_values = {});
 
-    template<typename T>
+    template <typename T>
     const T& get(const std::string& name) {
       if (parameters.count(name)) {
         return std::any_cast<const T&>(parameters[name]);
@@ -30,6 +30,19 @@ namespace fs {
       }
       log << "No argument with " << name << " found. \n";
       assert(false);
+    }
+
+    template <typename T>
+    bool try_get(const std::string& parameter_name, T& parameter_value) {
+      if (parameters.count(parameter_name)) {
+        parameter_value = std::any_cast<const T&>(parameters[parameter_name]);
+        return true;
+      } else if (default_parameters.count(parameter_name)) {
+        parameter_value = std::any_cast<const T&>(default_parameters[parameter_name]);
+        return true;
+      }
+
+      return false;
     }
 
   private:

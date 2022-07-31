@@ -1,12 +1,14 @@
 #include "client.hpp"
+#include <cstdlib>
 
 Client::Client(Encoder& encoder, fs::Config& config, Logger& logger)
-    : status(Status::offline), 
-      config(config), 
+    : status(Status::offline),
+      log(logger),
+      config(config),
+      rc_info(fs::Config(log, std::string(getenv("HOME")) + "/.vchatrc")),
       socket(Socket(config.get<int>("port"))), 
       ui(UserInterface(*this)), 
-      encoder(encoder),
-      log(logger)
+      encoder(encoder)
 {}
 
 bool Client::set_address(std::string ip, int port) {
@@ -82,20 +84,31 @@ void Client::setup_address() {
   std::string ip;
   int port = 0;
   bool hint = false;
+  bool try_default = true;
   while (!set_address(ip, port)) {
     ui.clear_cli_window();
     if (hint)
         show_address_hint();
 
     hint = true;
-    
-    auto [ip_str, port_str] = ask_address();
-    try {
-      port = std::stoi(port_str);
-      ip = ip_str;
-    } catch (...) {
-      log << "User entered not a number. Asking him again..." << std::endl;
-      continue;
+
+    bool ip_from_rc = false;
+    bool port_from_rc = false;
+    if (try_default) {
+      ip_from_rc = rc_info.try_get<std::string>("defaultIpAddress", ip);
+      port_from_rc = rc_info.try_get<int>("defaultPort", port);
+      try_default = false;
+    }
+
+    if (!ip_from_rc || !port_from_rc) {
+      auto [ip_str, port_str] = ask_address();
+      try {
+        port = std::stoi(port_str);
+        ip = ip_str;
+      } catch (...) {
+        log << "User entered not a number. Asking him again..." << std::endl;
+        continue;
+      }
     }
   }
 
@@ -109,11 +122,15 @@ std::pair<std::string, std::string> Client::ask_auth_data() {
     uname_box_v = 1,
     uname_box_h = 12;
 
-  std::string username = ui.ask_form(
-          {uname_offset_v, uname_offset_h},
-          {uname_box_v, uname_box_h},
-          "Username: "
-  );
+  std::string username;
+  bool username_form_rc = rc_info.try_get<std::string>("username", username);
+
+  if (!username_form_rc)
+    username = ui.ask_form(
+            {uname_offset_v, uname_offset_h},
+            {uname_box_v, uname_box_h},
+            "Username: "
+    );
 
   static const size_t
     pass_offset_v = 1,
@@ -121,11 +138,15 @@ std::pair<std::string, std::string> Client::ask_auth_data() {
     pass_box_v = 1,
     pass_box_h = 12;
 
-  std::string password = ui.ask_form(
+  std::string password;
+  bool password_from_rc = rc_info.try_get<std::string>("password", password);
+
+  if (!password_from_rc)
+    password= ui.ask_form(
           {uname_offset_v + pass_offset_v, pass_offset_h},
           {pass_box_v, pass_box_h},
           "Password: "
-  );
+    );
 
   return std::make_pair(username, password);
 }

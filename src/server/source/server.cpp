@@ -187,9 +187,9 @@ void Server::add_message_handler(Object& object, Connection& user, std::stringst
   object.content = "[" + storage.get_user_nickname(user.user) + "] " + object.content;
 
   if (chat != 0) {
-    log << "Attaching object " << object.info();
+//    log << "Attaching object " << object.info();
     int id = storage.add_message(object, encoder, chat);
-    log << "OK" << std::endl;
+//    log << "OK" << std::endl;
     object = storage.get_message(id);
   } else {
     object.set_return_code(4);
