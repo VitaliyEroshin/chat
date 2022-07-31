@@ -12,11 +12,13 @@ Server::Connection::Connection(Socket* socket)
   : socket(socket) {};
 
 
-Server::Server(int port, Storage& storage, Encoder& encoder, Logger& log)
+Server::Server(int port, Storage& storage, Encoder& encoder, Logger& log, size_t threads)
     : socket(Socket(port)), 
       storage(storage), 
       encoder(encoder),
-      log(log)
+      log(log),
+      threadpool(threads),
+      callback_sender(0)
 {
   if (socket.set_socket_option(SO_REUSEADDR, 1) != 0)
     log << "Socket option setting failed." << std::endl;
@@ -84,6 +86,8 @@ void Server::select_descriptor() {
       }
     }
   }
+  threadpool.join();
+  callback_sender.join();
 }
 
 void Server::parse_query(const std::string& query, Connection& user) {
@@ -145,7 +149,9 @@ void Server::parse_auth_data(const Object& object, Connection& user) {
       user.status = Server::Connection::Status::inmenu;
   }
 
-  user.socket->send(encoder.encode(callback));
+  callback_sender.add_task([&](){
+    user.socket->send(encoder.encode(callback));
+  });
 }
 
 void Server::parse_command(const Object& object, Connection& user) {
@@ -164,7 +170,9 @@ void Server::parse_command(const Object& object, Connection& user) {
 
   if (handlers.count(command_type)) {
     auto sendfn = [this, user](const Object& callback){
-      user.socket->send(encoder.encode(callback));
+      callback_sender.add_task([&](){
+        user.socket->send(encoder.encode(callback));
+      });
     };
 
     auto task = handlers[command_type];
@@ -178,6 +186,7 @@ void Server::add_message(Object object, Connection& user) {
 }
 
 void Server::add_message_handler(Object& object, Connection& user, std::stringstream& ss) {
+
   chatid_t chat = storage.get_chat(user.user);
 
   // TODO
@@ -194,7 +203,7 @@ void Server::add_message_handler(Object& object, Connection& user, std::stringst
   } else {
     object.set_return_code(4);
   }
-
+  
   for (auto &other : connections) {
     if (storage.get_chat(other.user) != storage.get_chat(user.user)) {
       continue;

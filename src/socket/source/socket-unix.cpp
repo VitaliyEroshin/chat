@@ -60,7 +60,7 @@ std::string Socket::get_ip_address() const {
   return {inet_ntoa(address.addr.sin_addr)};
 }
 
-void Socket::send(const std::string& message) const {
+void Socket::send(const std::string& message) {
   static const int modulo = 127;
   buffer[0] = message.size() % modulo;
   buffer[1] = message.size() / modulo;
@@ -73,7 +73,7 @@ char SocketBase::buffer[buffer_size];
 
 std::string Socket::read() const {
   int ok = ::read(descriptor, buffer, 2);
-  
+
   if (ok < 0 || ok > buffer_size) {
     return "";
   }

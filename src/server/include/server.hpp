@@ -2,6 +2,7 @@
 #include "filesystem.hpp"
 #include "logger.hpp"
 #include "handlers.hpp" // handlers, ConnectionBase, types, objects, storage...
+#include "threadpool.hpp" // threadpool
 
 #include <set>
 #include <vector>
@@ -24,7 +25,7 @@ class Server {
   friend bool operator==(const Connection& first, const Connection& second);
 
 public:
-  explicit Server(int port, Storage& storage, Encoder& encoder, Logger& log);
+  explicit Server(int port, Storage& storage, Encoder& encoder, Logger& log, size_t threads);
 
   [[noreturn]] void loop();
   ~Server() = default;
@@ -32,6 +33,8 @@ public:
   Socket socket;
 
 private:
+  ThreadPool threadpool;
+  ThreadPool callback_sender;
   std::list<Connection> connections;
   std::map<std::string, handler_t> handlers;
 
