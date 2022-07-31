@@ -1,6 +1,7 @@
 #pragma once
 #include "socket-base-unix.hpp" // include if unix
 #include <string>
+#include <mutex>
 
 class Socket: public SocketBase {
 public:
@@ -15,7 +16,7 @@ public:
   
   Socket accept();
   std::string get_ip_address() const;
-  void send(const std::string& message) const;
+  void send(const std::string& message);
   std::string read() const;
   void get_peer_name();
   int get_port() const;

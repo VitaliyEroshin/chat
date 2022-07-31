@@ -14,6 +14,7 @@ target_link_libraries(server PRIVATE sockets_lib)
 target_link_libraries(server PRIVATE objects_lib)
 target_link_libraries(server PRIVATE filesystem_lib)
 target_link_libraries(server PRIVATE logger_lib)
+target_link_libraries(server PRIVATE threadpool_lib)
 
 set_target_properties(server
     PROPERTIES

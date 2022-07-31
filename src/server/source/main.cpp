@@ -10,7 +10,7 @@ int main() {
   StrEncoder encoder;
   SmartStorage storage("./config/storage.cfg", log, encoder);
 
-  Server server(config.get<int>("port"), storage, encoder, log);
+  Server server(config.get<int>("port"), storage, encoder, log, 4);
 
   server.loop();
 }

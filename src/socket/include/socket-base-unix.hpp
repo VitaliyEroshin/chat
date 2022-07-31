@@ -13,7 +13,7 @@ protected:
     const int domain = AF_INET;
     int descriptor;
     Address address;
-    static const size_t buffer_size = 1024;
+    static const size_t buffer_size = 2048;
     static char buffer[buffer_size];
 };
 

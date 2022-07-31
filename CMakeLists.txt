@@ -33,5 +33,6 @@ else (TEST)
     add_subdirectory(${PROJECT_SOURCE_DIR}/src/socket)
     add_subdirectory(${PROJECT_SOURCE_DIR}/src/server)
     add_subdirectory(${PROJECT_SOURCE_DIR}/src/client)
+    add_subdirectory(${PROJECT_SOURCE_DIR}/src/threadpool)
 
 endif (TEST)
