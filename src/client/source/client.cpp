@@ -392,9 +392,9 @@ void Client::parse_text_object(Object object) {
 }
 
 void Client::quit() {
+  ui.clear_cli_window();
   run.store(false);
-  socket.~Socket();
-
+  send_command("/quit");
 }
 
 void Client::parse_input_command(const std::string& command) {

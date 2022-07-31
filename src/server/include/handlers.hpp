@@ -19,4 +19,5 @@ struct Handlers {
   static handler_t get_about_handler;
   static handler_t scroll_up_handler;
   static handler_t scroll_down_handler;
+  static handler_t quit_handler;
 };

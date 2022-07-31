@@ -272,3 +272,13 @@ handler_t Handlers::scroll_down_handler =
     send(callback);
   }
 };
+
+handler_t Handlers::quit_handler =
+        [](std::stringstream& request, ConnectionBase& user_data, const Object& meta,
+           const std::function<void(const Object&)>& send, Storage& storage)
+{
+  Object callback = make_callback_obj();
+  callback.content = "Okay, see you later";
+  send(callback);
+  std::cout << "Quit request received, sent callback";
+};

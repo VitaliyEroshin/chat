@@ -217,6 +217,7 @@ void Server::init_handlers() {
   add_handler("/about", Handlers::get_about_handler);
   add_handler("/scrollup", Handlers::scroll_up_handler);
   add_handler("/scrolldown", Handlers::scroll_down_handler);
+  add_handler("/quit", Handlers::quit_handler);
 }
 
 void Server::add_handler(const std::string& command, handler_t handler) {

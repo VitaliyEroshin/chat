@@ -1,5 +1,6 @@
 #include "server.hpp"
 #include "constants.hpp"
+
 int main() {
   Logger log = {&std::cout};
 
