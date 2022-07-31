@@ -8,9 +8,9 @@ TEST(encoder, simpleText) {
   Object sent;
   sent.type = Object::Type::text;
   sent.content = "Hello world";
-  sent.setId(1555);
+  sent.set_id(1555);
 
-  ASSERT_EQ(sent.hasId(), true);
+  ASSERT_EQ(sent.has_id(), true);
   ASSERT_EQ(sent.id, 1555);
 
   Object received = enc.decode(enc.encode(sent));
@@ -25,7 +25,7 @@ TEST(encoder, emptyText) {
   Object sent;
   sent.type = Object::Type::text;
   sent.content = "";
-  sent.setId(1555);
+  sent.set_id(1555);
 
   Object received = enc.decode(enc.encode(sent));
 
@@ -39,7 +39,7 @@ TEST(encoder, largeText) {
   Object sent;
   sent.type = Object::Type::text;
   sent.content = std::string(10'000, 'x');
-  sent.setId(0);
+  sent.set_id(0);
 
   Object received = enc.decode(enc.encode(sent));
 
@@ -53,7 +53,7 @@ TEST(encoder, russianText) {
   Object sent;
   sent.type = Object::Type::text;
   sent.content = "Привет мир!";
-  sent.setId(0);
+  sent.set_id(0);
 
   Object received = enc.decode(enc.encode(sent));
 

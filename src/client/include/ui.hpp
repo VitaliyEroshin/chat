@@ -22,7 +22,7 @@ public:
     Output();
     ~Output() = default;
 
-    Window window;
+    Window window{};
     std::ostream& out;
 
     void flush() { std::flush(out); }
@@ -49,40 +49,40 @@ public:
 
     void move(Direction direction);
 
-    static Direction getDirection(output_char_t c);
+    static Direction get_direction(output_char_t c);
 
-    void moveTo(const Position& pos);
+    void move_to(const Position& pos);
   };
 
   struct Keyboard {
-    static bool isTab(char x) { return x == 9; }
-    static bool isEnter(char x) { return x == 13; }
-    static bool isBackspace(char x) { return x == 127; }
-    static bool isArrow(char x) { return x == 27; }
+    static bool is_tab(char x) { return x == 9; }
+    static bool is_enter(char x) { return x == 13; }
+    static bool is_backspace(char x) { return x == 127; }
+    static bool is_arrow(char x) { return x == 27; }
   };
 
   struct Input {
     struct Buffer {
       std::deque<output_char_t> right;
-      std::deque<int> rightWidth;
+      std::deque<int> right_width;
+      std::deque<int> left_width;
       output_t left;
-      std::deque<int> leftWidth;
 
-      size_t rightSize = 0;
-      size_t leftSize = 0;
-      size_t leftWidthSum = 0;
-      size_t rightWidthSum = 0;
+      size_t right_size = 0;
+      size_t left_size = 0;
+      size_t left_width_sum = 0;
+      size_t right_width_sum = 0;
 
-      void pushLeft(char c, int sz);
-      void pushRight(char c, int sz);
+      void push_left(char c, int sz);
+      void push_right(char c, int sz);
 
-      void popLeft(bool popWidth = false);
-      void popRight(bool popWidth = false);
+      void pop_left(bool popWidth = false);
+      void pop_right(bool popWidth = false);
 
-      int moveLeft();
-      int moveRight();
-      void moveLeftAll();
-      output_t getRight();
+      int move_left();
+      int move_right();
+      void move_left_all();
+      output_t get_right();
     };
 
     Output& output;
@@ -106,38 +106,38 @@ public:
 
   ~UserInterface();
 
-  void allocateSpace(size_t n);
+  void alloc_cli_window_space(size_t n);
 
-  [[maybe_unused]] void testWindowCorners();
+  [[maybe_unused]] void test_cli_window_corners();
 
   void print(const output_t& s);
   int print(output_char_t c, bool move = true);
   void print(Cursor::Position pivot, Cursor::Position size, const output_t& text);
   void print(Cursor::Position pivot, const output_t& text);
-  void printLines(Cursor::Position pivot, const std::vector<std::string>& lines);
-  void clearSpace(Cursor::Position pivot, Cursor::Position size);
+  void print_lines(Cursor::Position pivot, const std::vector<std::string>& lines);
+  void clear_space(Cursor::Position pivot, Cursor::Position size);
   
-  static int characterSize(char c);
-  static size_t getTextRealSize(const std::string& s);
+  static int char_size(char c);
+  static size_t get_text_width(const std::string& s);
   output_t input(Cursor::Position pivot, Cursor::Position size, bool dynamic = false);
-  output_t askForm(Cursor::Position pivot, Cursor::Position size, const output_t& text);
+  output_t ask_form(Cursor::Position pivot, Cursor::Position size, const output_t& text);
 
 private:
-  void processInputTab(Cursor::Position pivot, Cursor::Position end);
-  void processInputArrow(Cursor::Position pivot, Cursor::Position end);
-  void processInputBackspace(Cursor::Position& pivot, Cursor::Position end, Cursor::Position& size, bool dynamic);
-  void refreshInputBuffer(Cursor::Position pivot, Cursor::Position size);
+  void proc_input_tab(Cursor::Position pivot, Cursor::Position end);
+  void proc_input_arrow(Cursor::Position pivot, Cursor::Position end);
+  void proc_input_backspace(Cursor::Position& pivot, Cursor::Position end, Cursor::Position& size, bool dynamic);
+  void proc_input_buffer(Cursor::Position pivot, Cursor::Position size);
   void log(size_t cell, output_t s);
 
-  void scrollChatUp();
-  void scrollChatDown();
+  void scroll_chat_up();
+  void scroll_chat_down();
 
-  void allocateChatSpace(Cursor::Position& pivot, Cursor::Position& size);
-  void deallocateChatSpace(Cursor::Position& pivot, Cursor::Position& size);
+  void alloc_input_space(Cursor::Position& pivot, Cursor::Position& size);
+  void dealloc_input_space(Cursor::Position& pivot, Cursor::Position& size);
 
 public:
-  void clearWindow();
+  void clear_cli_window();
 
-  size_t getWindowHeight() const { return out.window.height; };
-  size_t getWindowWidth() const { return out.window.width; }
+  size_t get_cli_window_height() const { return out.window.height; };
+  size_t get_cli_window_width() const { return out.window.width; }
 };

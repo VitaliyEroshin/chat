@@ -1,4 +1,5 @@
 #pragma once
+
 #include <string>
 #include <iostream>
 #include <atomic>
@@ -7,7 +8,13 @@
 #include <list>
 #include <algorithm>
 
+#ifdef UDP
+#include "udp-socket.hpp"
+using Socket = UdpSocket;
+#else
 #include "socket.hpp"
+#endif
+
 #include "encoder.hpp"
 #include "ui.hpp"
 #include "filesystem.hpp"
@@ -19,12 +26,12 @@ struct ObjectTree {
 
   void insert(const Object& obj);
   void clear();
-  bool isMessage(std::list<Object>::iterator message) const;
-  int backId() const;
+  bool is_message(std::list<Object>::iterator message) const;
+  int back_id() const;
   int frontId() const;
-  void pushFront(Object object);
-  void pushBack(Object object);
-  void propagateIdFromBack();
+  void push_front(const Object& object);
+  void push_back(const Object& object);
+  void propagate_id_from_back();
 
   ObjectTree();
   ~ObjectTree() = default;
@@ -32,7 +39,7 @@ struct ObjectTree {
 
 class Client {
 private:
-  bool setAddress(std::string ip, int port);
+  bool set_address(std::string ip, int port);
 
   enum Status {
     offline, online, connecting, authentification, failed
@@ -43,46 +50,49 @@ private:
   UserInterface ui;
   Encoder& encoder;
   ObjectTree data;
-  fs::Config& config;
   Logger& log;
+  fs::Config& config;
+  fs::Config rc_info;
   
-  std::pair<std::string, std::string> askAddress();
+  std::pair<std::string, std::string> ask_address();
 
-  void showAddressHint();
-  void setupAddress();
-  int connectToHost();
+  void show_address_hint();
+  void setup_address();
+  int connect_to_host();
   
-  std::pair<std::string, std::string> askAuthData();
-  Object makeAuthAttempt(const std::string& username, const std::string& password);
-  int printAuthResult(int code);
+  std::pair<std::string, std::string> ask_auth_data();
+  static Object make_auth_attempt(const std::string& username, const std::string& password);
+  int print_auth_results(int code);
   int auth();
   
-  void initializeGUI();
-  bool printMessage(size_t& space, size_t width, const std::string& message);
-  void refreshMessages();
-  void sendText(const std::string& text);
-  void sendCommand(const std::string& text);
+  void init_gui();
+  bool print_message(size_t& space, size_t width, const std::string& message);
+  void refersh_messages();
+  void send_text(const std::string& text);
+  void send_command(const std::string& text);
 
   void delay(const std::string& label);
-  void showConnectionVerdict(const std::string& verdict);
+  void show_connection_verdict(const std::string& verdict);
   int connect();
-  void showBackground(std::atomic<bool>& connecting);
+  void show_background(std::atomic<bool>& connecting);
   void listen();
 
-  void parseTextObject(Object object);
-  void readServer();
+  void parse_text_object(Object object);
+  void read_server();
 
   void quit();
-  void parseInputCommand(const std::string& command);
-  void readUserInput();
-  void refreshOutput();
+  void parse_input_command(const std::string& command);
+  void read_user_input();
+  void refresh_output();
+
+  void get_previous_messages();
 
   void scrollup();
   void scrolldown();
 
-  void drawChatPointer();
-  void allocateChatSpace();
-  void deallocateChatSpace();
+  void draw_chat_ptr();
+  void alloc_chat_space();
+  void dealloc_chat_space();
 
   size_t chatspace = 1;
   size_t cachesize = 5;

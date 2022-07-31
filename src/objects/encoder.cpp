@@ -1,6 +1,6 @@
 #include "encoder.hpp"
 
-char StrEncoder::getTypeId(const Object& object) {
+char StrEncoder::get_type_id(const Object& object) {
   if (object.type == Object::Type::text) {
     return 1;
   } 
@@ -19,7 +19,7 @@ char StrEncoder::getTypeId(const Object& object) {
   return 0;
 }
 
-Object::Type StrEncoder::fromTypeId(char id) {
+Object::Type StrEncoder::from_type_id(char id) {
   if (id == 1) {
     return Object::Type::text;
   }
@@ -40,7 +40,7 @@ Object::Type StrEncoder::fromTypeId(char id) {
 }
 
 template<typename T>
-Encoder::bytes StrEncoder::toBytes(T id) {
+Encoder::bytes StrEncoder::to_bytes(T id) {
   const auto size = sizeof(T);
   char result[size];
     
@@ -55,103 +55,154 @@ Encoder::bytes StrEncoder::toBytes(T id) {
 }
 
 template<typename T>
-T StrEncoder::fromBytes(const Encoder::bytes& b) {
+T StrEncoder::from_bytes(const Encoder::bytes& b) {
   const auto size = sizeof(T);
   T result;
-  const char* rawBytes = b.c_str();
+  const char* r_bytes = b.c_str();
 
   std::copy(
-    &rawBytes[0],
-    &rawBytes[0] + size,
+    &r_bytes[0],
+    &r_bytes[0] + size,
     reinterpret_cast<char*>(&result)
   );
 
   return result;
 }
 
+#include <algorithm> // reverse
+std::string remove_zeroes(std::string s) {
+  std::string result;
+  std::reverse(s.begin(), s.end());
+  auto ptr = reinterpret_cast<const unsigned char*>(&s[0]);
+
+  int carry = 0;
+  for (int i = 0; i < s.size(); ++i) {
+    int x = ptr[i];
+    carry = carry * 256 + x;
+    while (carry >= 255) {
+      result.push_back(carry % 255 + 1);
+      carry /= 255;
+    }
+  }
+
+  if (carry != 0) {
+    result.push_back(carry + 1);
+  }
+
+  return result;
+}
+
+std::string add_zeroes(std::string s) {
+  std::string result;
+  std::reverse(s.begin(), s.end());
+  auto ptr = reinterpret_cast<const unsigned char*>(&s[0]);
+
+  int carry = 0;
+
+  for (int i = 0; i < s.size(); ++i) {
+    int x = ptr[i];
+    carry = carry * 255 + (x - 1);
+    while (carry >= 256) {
+      result.push_back(carry % 256);
+      carry /= 256;
+    }
+  }
+
+  if (carry != 0) {
+    result.push_back(carry);
+  }
+
+  return result;
+}
+
+
 Encoder::bytes StrEncoder::encode(const Object& object) {
   std::string s = "";
-  s.push_back(getTypeId(object));
+  s.push_back(get_type_id(object));
   s.push_back(object.attributes);
-  if (object.hasId())
-    s += toBytes(object.id);
+  if (object.has_id())
+    s += to_bytes(object.id);
 
-  if (object.hasAuthor())
-    s += toBytes(object.author);
+  if (object.has_author())
+    s += to_bytes(object.author);
 
-  if (object.hasTimestamp())
-    s += toBytes(object.timestamp);
+  if (object.has_timestamp())
+    s += to_bytes(object.timestamp);
 
-  if (object.hasThread())
-    s += toBytes(object.thread);
+  if (object.has_thread())
+    s += to_bytes(object.thread);
 
-  if (object.hasReply())
-    s += toBytes(object.reply);
+  if (object.has_reply())
+    s += to_bytes(object.reply);
 
-  if (object.hasPrev())
-    s += toBytes(object.prev);
+  if (object.has_prev())
+    s += to_bytes(object.prev);
 
-  if (object.hasNext())
-    s += toBytes(object.next);
+  if (object.has_next())
+    s += to_bytes(object.next);
 
-  if (object.hasReturnCode())
-    s += toBytes(object.code);
+  if (object.has_return_code())
+    s += to_bytes(object.code);
 
   s += object.content;
+  s.push_back(1);
+  s = remove_zeroes(s);
   return s;
 }
 
-Object StrEncoder::decode(const Encoder::bytes& bytes) {
+Object StrEncoder::decode(Encoder::bytes bytes) {
   Object object;
-  
+  bytes = add_zeroes(bytes);
+
   char type = bytes[0];
-  object.type = fromTypeId(type);
+  object.type = from_type_id(type);
   object.attributes = bytes[1];
 
   int ptr = 2;
-  if (object.hasId()) {
-    object.id = fromBytes<int>(bytes.substr(ptr, sizeof(int)));
+  if (object.has_id()) {
+    object.id = from_bytes<int>(bytes.substr(ptr, sizeof(int)));
     ptr += sizeof(int);
   }
 
-  if (object.hasAuthor()) {
-    object.author = fromBytes<int>(bytes.substr(ptr, sizeof(int)));
+  if (object.has_author()) {
+    object.author = from_bytes<int>(bytes.substr(ptr, sizeof(int)));
     ptr += sizeof(int);
   }
     
-  if (object.hasTimestamp()) {
-    object.timestamp = fromBytes<int64_t>(bytes.substr(ptr, sizeof(int64_t)));
+  if (object.has_timestamp()) {
+    object.timestamp = from_bytes<int64_t>(bytes.substr(ptr, sizeof(int64_t)));
     ptr += sizeof(int64_t);
   }
 
-  if (object.hasThread()) {
-    object.thread = fromBytes<int>(bytes.substr(ptr, sizeof(int)));
+  if (object.has_thread()) {
+    object.thread = from_bytes<int>(bytes.substr(ptr, sizeof(int)));
     ptr += sizeof(int);
   }
 
-  if (object.hasReply()) {
-    object.reply = fromBytes<int>(bytes.substr(ptr, sizeof(int)));
+  if (object.has_reply()) {
+    object.reply = from_bytes<int>(bytes.substr(ptr, sizeof(int)));
     ptr += sizeof(int);
   }
 
-  if (object.hasPrev()) {
-    object.prev = fromBytes<int>(bytes.substr(ptr, sizeof(int)));
+  if (object.has_prev()) {
+    object.prev = from_bytes<int>(bytes.substr(ptr, sizeof(int)));
     ptr += sizeof(int);
   }
 
-  if (object.hasNext()) {
-    object.next = fromBytes<int>(bytes.substr(ptr, sizeof(int)));
+  if (object.has_next()) {
+    object.next = from_bytes<int>(bytes.substr(ptr, sizeof(int)));
     ptr += sizeof(int);
   }
 
-  if (object.hasReturnCode()) {
-    object.code = fromBytes<int>(bytes.substr(ptr, sizeof(int)));
+  if (object.has_return_code()) {
+    object.code = from_bytes<int>(bytes.substr(ptr, sizeof(int)));
     ptr += sizeof(int);
   }
 
   for (int i = ptr; i < bytes.size(); ++i) {
     object.content += bytes[i];
   }
+  object.content.pop_back();
   
   return object;
 }

@@ -1,31 +1,18 @@
-#pragma once
+#include "socket.hpp"
+#include "filesystem.hpp"
+#include "logger.hpp"
+#include "handlers.hpp" // handlers, ConnectionBase, types, objects, storage...
+
 #include <set>
 #include <vector>
 #include <string>
 #include <iostream>
 #include <list>
 #include <unordered_set>
-#include <sstream>
-#include <functional>
-#include "socket.hpp"
-#include "storage.hpp"
-#include "filesystem.hpp"
-#include "logger.hpp"
 
 class Server {
-  struct Connection {
-    enum Status {
-      unauthorized,
-      inmenu,
-      inchat,
-      inprofile
-    };
-
+  struct Connection: public ConnectionBase {
     Socket* socket;
-    userid_t user{};
-    chatid_t chat{};
-    Status status;
-
     explicit Connection(Socket* socket);
   };
 
@@ -46,35 +33,18 @@ public:
 
 private:
   std::list<Connection> connections;
-  std::map<std::string, std::function<void(Object&, Connection&, std::stringstream&)>> handlers;
+  std::map<std::string, handler_t> handlers;
 
   DescriptorSet readset{};
-  void acceptConnection();
-  void selectDescriptor();
-  void removeConnection(const Connection& peer);
-  void parseQuery(const std::string& query, Connection& user);
-  void parseAuthData(const Object& object, Connection& user);
-  void parseCommand(const Object& object, Connection& user);
-  void addMessage(Object object, Connection& user);
+  void accept_connection();
+  void select_descriptor();
+  void remove_connection(const Connection& peer);
+  void parse_query(const std::string& query, Connection& user);
+  void parse_auth_data(const Object& object, Connection& user);
+  void parse_command(const Object& object, Connection& user);
+  void add_message(Object object, Connection& user);
 
-  void initHandlers();
-  
-  template<typename Handler>
-  void addHandler(const std::string& command, Handler handler);
-
-
-  void addFriendHandler(Object& callback, Connection& user, std::stringstream& ss);
-  void getSelfIdHandler(Object& callback, Connection& user, std::stringstream& ss);
-  void getChatIdHandler(Object& callback, Connection& user, std::stringstream& ss);
-  void makeChatHandler(Object& callback, Connection& user, std::stringstream& ss);
-  void inviteToChatHandler(Object& callback, Connection& user, std::stringstream& ss);
-  void switchChatHandler(Object& callback, Connection& user, std::stringstream& ss);
-  void getFriendsHandler(Object& callback, Connection& user, std::stringstream& ss);
-  void getChatsHandler(Object& callback, Connection& user, std::stringstream& ss);
-  void getHelpHandler(Object& callback, Connection& user, std::stringstream& ss);
-  void getAboutHandler(Object& callback, Connection& user, std::stringstream& ss);
-
-  void addMessageHandler(Object& object, Connection& user, std::stringstream& ss);
-  void scrollUpHandler(Object& object, Connection& user, std::stringstream& ss);
-  void scrollDownHandler(Object& object, Connection& user, std::stringstream& ss);
+  void init_handlers();
+  void add_handler(const std::string& command, handler_t handler);
+  void add_message_handler(Object &object, Connection &user, std::stringstream &ss);
 };

@@ -1,9 +1,10 @@
 #include "storage.hpp"
+#include "constants.hpp"
 #include <string.h>
 #include <sstream>
 #include <filesystem>
 
-void SmartStorage::addModule(const std::string& alias, size_t lruSize) {
+void SmartStorage::add_module(const std::string& alias, size_t lru_size) {
   data.emplace(
     std::piecewise_construct,
     std::forward_as_tuple(alias),
@@ -11,10 +12,12 @@ void SmartStorage::addModule(const std::string& alias, size_t lruSize) {
   );
 }
 
-SmartStorage::SmartStorage(const std::string& configPath, Logger& logger)
-    : log(logger),
-      config(logger, configPath)
+SmartStorage::SmartStorage(const std::string& cfg_path, Logger& logger, Encoder& encoder)
+    : log(logger)
+    , config(logger)
+    , encoder(encoder)
 {
+  config.load(cfg_path, ServerConfig::get_default_values());
   const size_t lruSize = 2;
 
   std::vector<std::string> modules = {
@@ -28,7 +31,7 @@ SmartStorage::SmartStorage(const std::string& configPath, Logger& logger)
   };
 
   for (auto& module : modules) {
-    addModule(module, lruSize);
+    add_module(module, lruSize);
   }
 }
 
@@ -36,7 +39,7 @@ bool isPrefix(const std::string& s, const std::string& prefix) {
   return s.substr(0, prefix.size()) == prefix;
 }
 
-std::string getPrefix(const std::string& s, size_t length) {
+std::string get_prefix(const std::string& s, size_t length) {
   std::string prefix;
   for (size_t i = 0; i < length; ++i) {
     prefix.push_back(s.size() > i ? s[i] : '#');
@@ -44,8 +47,8 @@ std::string getPrefix(const std::string& s, size_t length) {
   return prefix;
 }
 
-int SmartStorage::getUser(const login_t& login, const password_t& password) {
-  Block& block = data["users"][getPrefix(login, 1)];
+int SmartStorage::get_user(const login_t& login, const password_t& password) {
+  Block& block = data["users"][get_prefix(login, 1)];
   
   for (size_t i = 0; i < block.size(); ++i) {
     if (!isPrefix(block[i], login + " ")) {
@@ -59,118 +62,129 @@ int SmartStorage::getUser(const login_t& login, const password_t& password) {
       return -2;
     }
     ss >> value;
-    return std::stoi(value);
+    try {
+      auto result = std::stoi(value);
+      return result;
+    } catch (...) {
+      log << "Unable stoi in get_user, value =[" << value << "]" << std::endl;
+      throw;
+    }
   }
   return -1;
 }
 
-int SmartStorage::getUserCount() {
-  if (userCount != -1) {
-    return userCount;
+int SmartStorage::get_user_count() {
+  if (user_count != -1) {
+    return user_count;
   }
   std::string path = config.get<std::string>("userdataPath");
   
-  int blocksCount = fs::getFileCount(path);
+  int blocksCount = fs::get_file_count(path);
   if (blocksCount == 0) {
-    userCount = 0;
+    user_count = 0;
     return 0;
   }
   Block& block = data["userdata"][blocksCount - 1];
-  std::stringstream ss(block[block.size()]);
+  std::stringstream ss(block[block.size() - 1]);
   std::string id;
   ss >> id;
-  userCount = std::stoi(id);
-  return userCount;
+  try {
+    user_count = std::stoi(id);
+  } catch (...) {
+    log << "Unable to stoi in get_user_count, id=[" << id << "]" << std::endl;
+    throw;
+  }
+  return user_count;
 }
 
-int SmartStorage::getUserDataBlock(size_t id) {
+int SmartStorage::get_user_data_block(int id) {
   return (id - 1) / config.get<int>("userDataBlockSize");
 }
 
-int SmartStorage::getUserDataBlockPosition(size_t id) {
+int SmartStorage::get_user_data_block_pos(int id) {
   return (id - 1) % config.get<int>("userDataBlockSize");
 }
 
-int SmartStorage::addUser(const login_t& login, const password_t& password) {
-  int userStatus = getUser(login, password);
-  if (userStatus != -1) {
+int SmartStorage::add_user(const login_t& login, const password_t& password) {
+  int user_status = get_user(login, password);
+  if (user_status != -1) {
     return -1;
   }
 
-  userid_t id = getUserCount() + 1;
-  Block& block = data["users"][getPrefix(login, 1)];
+  userid_t id = get_user_count() + 1;
+  Block& block = data["users"][get_prefix(login, 1)];
   std::string s = login + " " + password + " " + std::to_string(id);
   block.add(s);
-  block.save(config.get<std::string>("usersPath") + getPrefix(login, 1));
+  block.save(config.get<std::string>("usersPath") + get_prefix(login, 1));
 
-  int blockId = getUserDataBlock(id);
-  Block& dataBlock = data["userdata"][blockId];
+  int block_id = get_user_data_block(id);
+  Block& data_block = data["userdata"][block_id];
   s = std::to_string(id) + " " + login;
-  dataBlock.add(s);
-  ++userCount;
-  dataBlock.save(config.get<std::string>("userdataPath") + std::to_string(blockId));
+  data_block.add(s);
+  ++user_count;
+  data_block.save(config.get<std::string>("userdataPath") + std::to_string(block_id));
   return id;
 }
 
-int SmartStorage::getChatsCount() {
-  if (chatCount != -1) {
-    return chatCount;
+int SmartStorage::get_chats_count() {
+  if (chat_count != -1) {
+    return chat_count;
   }
   std::string path = config.get<std::string>("chatsPath");
   
-  int blocksCount = fs::getFileCount(path);
-  if (blocksCount == 0) {
-    chatCount = 0;
+  int block_count = fs::get_file_count(path);
+  if (block_count == 0) {
+    chat_count = 0;
     return 0;
   }
-  
-  chatCount = blocksCount;
-  return chatCount;
+
+  chat_count = block_count;
+  return chat_count;
 }
 
-bool SmartStorage::isMember(Block& block, userid_t member) {
+bool SmartStorage::is_member(Block& block, userid_t member) {
   return block[0].find(" " + std::to_string(member) + " ") != std::string::npos;
 }
 
-bool SmartStorage::isMember(chatid_t chat, userid_t member) {
+bool SmartStorage::is_member(chatid_t chat, userid_t member) {
   Block& block = data["chats"][std::to_string(chat)];
-  return isMember(block, member);
+  return is_member(block, member);
 }
 
-int SmartStorage::createChat(userid_t creator) {
-  chatid_t id = getChatsCount() + 1;
+int SmartStorage::create_chat(userid_t creator) {
+  chatid_t id = get_chats_count() + 1;
   Block& block = data["chats"][std::to_string(id)];
   block[0] = " " + std::to_string(creator) + " ";
   block[1] = "0";
   block.save();
-  addAvailableChat(creator, id);
-  ++chatCount;
+  add_available_chat(creator, id);
+  ++chat_count;
   return id;
 }
 
-void SmartStorage::addAvailableChat(userid_t id, chatid_t chat) {
-  Block& block = data["availableChats"][getUserDataBlock(id)];
-  block[getUserDataBlockPosition(id)] += std::to_string(chat) + " ";
-  block.block_size = std::max(block.size(), static_cast<size_t>(getUserDataBlockPosition(id) + 1));
+void SmartStorage::add_available_chat(userid_t id, chatid_t chat) {
+  Block& block = data["availableChats"][get_user_data_block(id)];
+  block[get_user_data_block_pos(id)] += std::to_string(chat) + " ";
+  block.block_size = std::max(block.size(), static_cast<size_t>(get_user_data_block_pos(id) + 1));
   block.save();
 }
 
-int SmartStorage::inviteToChat(userid_t selfId, userid_t target, chatid_t chat) {
-  if (target == selfId || target > userCount) {
+int SmartStorage::invite_to_chat(userid_t self_id, userid_t target, chatid_t chat) {
+  if (target == self_id || target > user_count) {
     return -4;
   }
 
-  if (chat > chatCount) {
+  if (chat > chat_count) {
     return -1;
   }
 
   Block& block = data["chats"][std::to_string(chat)];
-  if (!isMember(block, selfId)) {
+  if (!is_member(block, self_id)) {
     return -2;
   }
 
-  if (!isMember(block, target)) {
-    addAvailableChat(target, chat);
+  if (!is_member(block, target)) {
+    add_available_chat(target, chat);
     block[0] += std::to_string(target) + " ";
     block.save();
   }
@@ -178,188 +192,222 @@ int SmartStorage::inviteToChat(userid_t selfId, userid_t target, chatid_t chat) 
   return 0;
 }
 
-chatid_t SmartStorage::getChat(userid_t selfId) {
-  if (!currentChat.count(selfId)) {
-    currentChat[selfId] = 0;
-    chatListeners[0].insert(selfId);
+chatid_t SmartStorage::get_chat(userid_t self_id) {
+  if (!current_chat.count(self_id)) {
+    current_chat[self_id] = 0;
+    chat_listeners[0].insert(self_id);
   }
-  return currentChat[selfId];
+  return current_chat[self_id];
 }
 
-int SmartStorage::setUserChat(userid_t id, chatid_t chat) {
-  if (chat < 0 || chat > getChatsCount()) {
+int SmartStorage::get_user_chat(userid_t id, chatid_t chat) {
+  if (chat < 0 || chat > get_chats_count()) {
     return -1;
   };
 
-  if (chat != 0 && !isMember(chat, id)) {
+  if (chat != 0 && !is_member(chat, id)) {
     return -2;
   };
 
-  if (currentChat.count(id)) {
-    chatListeners[currentChat[id]].erase(id);
+  if (current_chat.count(id)) {
+    chat_listeners[current_chat[id]].erase(id);
   }
 
-  currentChat[id] = chat;
-  chatListeners[chat].insert(id);
+  current_chat[id] = chat;
+  chat_listeners[chat].insert(id);
   return 0;
 }
 
-std::vector<chatid_t> SmartStorage::getUserChats(userid_t id) {
-  Block& block = data["availableChats"][getUserDataBlock(id)];
-  std::stringstream ss(block[getUserDataBlockPosition(id)]);
-  std::string chatId;
+std::vector<chatid_t> SmartStorage::get_user_chats(userid_t id) {
+  Block& block = data["availableChats"][get_user_data_block(id)];
+  std::stringstream ss(block[get_user_data_block_pos(id)]);
+  std::string chat_id;
 
-  std::vector<chatid_t> chatlist;
-  while (ss >> chatId) {
-    chatlist.push_back(std::stoi(chatId));
+  std::vector<chatid_t> chat_list;
+  while (ss >> chat_id) {
+    try {
+      int chat_id_ = std::stoi(chat_id);
+      chat_list.push_back(chat_id_);
+    } catch (...) {
+      log << "Failed stoi at get_user_chats, chatid=[" << chat_id << "]" << std::endl;
+      throw;
+    }
+    
   }
-  return chatlist;
+  return chat_list;
 }
   
-std::vector<userid_t> SmartStorage::getUserFriends(userid_t id) {
-  Block& block = data["friends"][getUserDataBlock(id)];
-  std::stringstream ss(block[getUserDataBlockPosition(id)]);
+std::vector<userid_t> SmartStorage::get_user_friends(userid_t id) {
+  Block& block = data["friends"][get_user_data_block(id)];
+  std::stringstream ss(block[get_user_data_block_pos(id)]);
   std::string friendId;
 
-  std::vector<userid_t> friendlist;
+  std::vector<userid_t> friend_list;
   while (ss >> friendId) {
-    friendlist.push_back(std::stoi(friendId));
+    try {
+      int friendId_ = std::stoi(friendId);
+      friend_list.push_back(friendId_);
+    } catch (...) {
+      log << "Failed stoi at get_user_friends, chatid=[" << friendId << "]" << std::endl;
+      throw;
+    }
+    
   }
-  return friendlist;
+  return friend_list;
 }
 
-bool SmartStorage::isFriend(const std::string& s, userid_t target) {
+bool SmartStorage::is_friend(const std::string& s, userid_t target) {
   return s.find(" " + std::to_string(target) + " ") != std::string::npos;
 }
 
-int SmartStorage::addFriend(userid_t selfId, userid_t target) {
-  if (target == selfId || target > userCount) {
+int SmartStorage::add_friend(userid_t self_id, userid_t target) {
+  if (target == self_id || target > user_count) {
     return -1;
   }
 
-  Block& block = data["friends"][getUserDataBlock(selfId)];
-  std::string& s = block[getUserDataBlockPosition(selfId)];
+  Block& block = data["friends"][get_user_data_block(self_id)];
+  std::string& s = block[get_user_data_block_pos(self_id)];
 
-  if (isFriend(s, target)) {
+  if (is_friend(s, target)) {
     return -2;
   }
   if (s.empty()) {
     s.push_back(' ');
   }
   s += std::to_string(target) + " ";
-  block.block_size = std::max(block.size(), 
-    static_cast<size_t>(getUserDataBlockPosition(selfId)) + 1);
+  block.block_size = std::max(block.size(),
+                              static_cast<size_t>(get_user_data_block_pos(self_id)) + 1);
 
   block.save();
   return 0;
 }
 
-std::string SmartStorage::getUserNickname(userid_t id) {
-  Block& block = data["userdata"][getUserDataBlock(id)];
-  std::stringstream ss(block[getUserDataBlockPosition(id)]);
+std::string SmartStorage::get_user_nickname(userid_t id) {
+  Block& block = data["userdata"][get_user_data_block(id)];
+  std::string s = block[get_user_data_block_pos(id)];
+  std::stringstream ss(s);
   std::string value;
   ss >> value;
   ss >> value;
   return value;
 }
 
-int SmartStorage::getMessageCount() {
-  if (messageCount != -1) {
-    return messageCount;
+int SmartStorage::get_msg_count() {
+  if (message_count != -1) {
+    return message_count;
   }
 
   std::string path = config.get<std::string>("messagesPath");
   
-  int blocksCount = fs::getFileCount(path);
+  int blocksCount = fs::get_file_count(path);
   if (blocksCount == 0) {
-    messageCount = 0;
+    message_count = 0;
     return 0;
   }
+  
   Block& block = data["messages"][blocksCount - 1];
-  std::stringstream ss(block[block.size() - 1]);
-  std::string id;
-  ss >> id;
-  messageCount = std::stoi(id);
-  return messageCount;
+  std::string& s = block[block.size() - 1];
+  Object obj = encoder.decode(s);
+  message_count = obj.id;
+  return message_count;
 }
 
-int SmartStorage::getMessageBlock(int id) {
+int SmartStorage::get_msg_block(int id) {
   return (id - 1) / config.get<int>("messageBlockSize");
 }
 
-int SmartStorage::getMessageBlockPosition(int id) {
+int SmartStorage::get_msg_block_pos(int id) {
   return (id - 1) % config.get<int>("messageBlockSize");
 }
 
-void SmartStorage::setMessage(Object object, Encoder& encoder, chatid_t chatid) {
-  if (!object.hasId()) {
-    object.setId(getMessageCount() + 1);
-    ++messageCount;
+void SmartStorage::set_message(Object object, Encoder& encoder, chatid_t chatid) {
+  if (!object.has_id()) {
+    object.set_id(get_msg_count() + 1);
+    ++message_count;
   }
 
-  Block& block = data["messages"][getMessageBlock(object.id)];
-  std::string& s = block[getMessageBlockPosition(object.id)];
+  Block& block = data["messages"][get_msg_block(object.id)];
+  std::string& s = block[get_msg_block_pos(object.id)];
   s = encoder.encode(object);
   block.save();
 
-  Block& idblock = data["messagechatid"][getMessageBlock(object.id)];
-  std::string& sid = idblock[getMessageBlockPosition(object.id)];
+  Block& idblock = data["messagechatid"][get_msg_block(object.id)];
+  std::string& sid = idblock[get_msg_block_pos(object.id)];
   sid = std::to_string(chatid);
   idblock.save();
 }
 
-int SmartStorage::addMessage(Object object, Encoder& encoder, chatid_t chatid) {
+int SmartStorage::add_message(Object object, Encoder& encoder, chatid_t chatid) {
   Block& block = data["chats"][std::to_string(chatid)];
-  int prev = std::stoi(block[1]);
-  
-  object.setPrev(prev);
-  int id = getMessageCount() + 1;
-  object.setId(id);
-  ++messageCount;
+  int prev = 0;
+  try {
+    prev = std::stoi(block[1]);
+  } catch (...) {
+    log << "Failed stoi in add_message, value=[" << block[1] << "]" << std::endl;
+  }
+  if (prev)
+    object.set_prev(prev);
+
+  int id = get_msg_count() + 1;
+  object.set_id(id);
+  ++message_count;
   
   if (prev != 0) {
-    Object p = getMessage(prev, encoder);
-    p.setNext(object.id);
-    setMessage(p, encoder, chatid);
+    Object p = get_message(prev);
+    p.set_next(object.id);
+    set_message(p, encoder, chatid);
   }
-  
-  setMessage(object, encoder, chatid);
+  set_message(object, encoder, chatid);
   block[1] = std::to_string(object.id);
   block.save();
   return id;
 }
 
-Object SmartStorage::getMessage(int id, Encoder& encoder) {
-  Block& block = data["messages"][getMessageBlock(id)];
-  std::string& s = block[getMessageBlockPosition(id)];
+Object SmartStorage::get_message(int id) {
+  Block& block = data["messages"][get_msg_block(id)];
+  std::string& s = block[get_msg_block_pos(id)];
   if (s.empty()) {
     Object object;
-    object.setReturnCode(-1);
+    object.set_return_code(-1);
     return object;
   }
   
   return encoder.decode(s);
 }
 
-Object SmartStorage::getLastMessage(Encoder& encoder, chatid_t chatid) {
+Object SmartStorage::get_last_message(chatid_t chatid) {
   Block& block = data["chats"][std::to_string(chatid)];
-  int id = std::stoi(block[1]);
+  int id = 0;
+  try {
+    id = std::stoi(block[1]);
+  } catch (...) {
+    log << "Failed stoi at get_last_message, value=[" << block[1] << "]" << std::endl;
+    throw;
+  }
+  
   if (id == 0) {
     Object obj;
-    obj.setReturnCode(-1);
+    obj.set_return_code(-1);
     return obj;
   }
-  return getMessage(id, encoder);
+  return get_message(id);
 }
 
-chatid_t SmartStorage::getMessageChatid(int id) {
-  Block& block = data["messagechatid"][getMessageBlock(id)];
-  std::string& s = block[getMessageBlockPosition(id)];
+chatid_t SmartStorage::get_message_chat_id(int id) {
+  Block& block = data["messagechatid"][get_msg_block(id)];
+  std::string& s = block[get_msg_block_pos(id)];
   if (s.empty()) {
     Object object;
-    object.setReturnCode(-1);
+    object.set_return_code(-1);
     return -1;
   }
 
-  return std::stoi(s);
+  chatid_t chatid = 0;
+  try {
+    chatid = std::stoi(s);
+  } catch (...) {
+    log << "Failed stoi at get_message_chat_id, value=[" << s << "]" << std::endl;
+    throw;
+  }
+  return chatid;
 }
